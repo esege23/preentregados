@@ -12,7 +12,7 @@
 :root{
   --bg:#0c0d0a;--panel:#15170f;--panel-2:#1c1f14;--line:#2b2f1f;
   --ink:#f3f4ea;--muted:#9a9d86;--acc:#cdff3a;--acc-dim:#8fa83f;--warn:#ff7a3d;
-  --nav-h:64px;--safe-b:env(safe-area-inset-bottom,0px);
+  --nav-h:64px;--safe-b:0px;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
@@ -517,7 +517,10 @@ function renderHoy(){
   const nut=todayNut();
   const bw=latestBw();
   const phase=PHASES[Math.min(S.week,7)];
-  const dateLabel=new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
+  const now=new Date();
+  const dias=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const meses=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const dateLabel=`${dias[now.getDay()]} ${now.getDate()} ${meses[now.getMonth()]}`;
 
   let dayCard=gymDay?`
     <div class="today-gym-card">
@@ -894,8 +897,16 @@ document.getElementById('save-bw').addEventListener('click',saveBw);
 // ═══════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════
-load();
-render(S.page);
+try {
+  load();
+  render(S.page);
+} catch(e) {
+  document.getElementById('page-hoy').style.cssText='display:block;padding:20px';
+  document.getElementById('page-hoy').innerHTML=
+    '<div style="font-family:monospace;color:#cdff3a;font-size:13px;padding:16px;background:#1c1f14;border:1px solid #2b2f1f">'
+    +'<b style="color:#ff7a3d">Error al cargar la app:</b><br><br>'
+    +e.message+'<br><br>'+e.stack+'</div>';
+}
 </script>
 </body>
 </html>
