@@ -449,6 +449,16 @@ function lastWeight(exId){
   return null;
 }
 
+function lastSession(exId){
+  const t=tod();
+  const dates=Object.keys(S.workouts).sort().reverse().filter(d=>d!==t);
+  for(const d of dates){
+    const sets=S.workouts[d]?.exercises?.[exId];
+    if(sets&&sets.length)return{sets,date:d};
+  }
+  return null;
+}
+
 function prWeight(exId){
   let max=0;
   Object.values(S.workouts).forEach(log=>{
@@ -716,7 +726,7 @@ function renderStats(){
     ${prRows?`<div class="sec-label">PRs · Movimientos principales</div>${prRows}`:''}
     <div class="sec-label">Peso corporal</div>
     ${bwRows||'<div class="empty"><b>Sin registros aún</b>Andá a Hoy y registrá tu peso.</div>'}
-    ${recentSess?`<div class="sec-label">Historial de sesiones</div>${recentSess}`:''}`;  
+    ${recentSess?`<div class="sec-label">Historial de sesiones</div>${recentSess}`:''}}`;
 }
 
 // ═══════════════════════════════════════════════
@@ -768,18 +778,28 @@ function openExSheet(exId,dayId){
   curExId=exId;curDayId=dayId;
   const day=DAYS.find(d=>d.id===dayId);
   const ex=day.exercises.find(e=>e.id===exId);
-  const lw=lastWeight(exId);
+  const ls=lastSession(exId);
   const t=tod();
   const saved=(S.workouts[t]?.exercises?.[exId])||[];
+  // Pre-fill from today's log if exists, else from last session (weight+reps), else blank
+  const fallback=i=>({
+    weight:ls?.sets[i]?.weight||'',
+    reps:ls?.sets[i]?.reps||'',
+    done:false
+  });
   const sets=saved.length>=ex.sets
     ?saved.slice(0,ex.sets)
-    :[...saved,...Array.from({length:ex.sets-saved.length},()=>({weight:lw?.weight||'',reps:'',done:false}))];
+    :[...saved,...Array.from({length:ex.sets-saved.length},(_,i)=>fallback(saved.length+i))];
 
   document.getElementById('sh-ex-name').textContent=ex.name;
   document.getElementById('sh-ex-plan').textContent=`${ex.sets} series × ${repsStr(ex)} reps · desc ${ex.rest}`;
-  document.getElementById('sh-ex-last').innerHTML=lw
-    ?`Último: <b>${lw.weight} kg</b> (${fdate(lw.date)})`
-    :'<span style="color:var(--muted)">Primera vez — establecé tu peso base</span>';
+  // Show last session summary: weight + reps per set
+  let lastHtml='<span style="color:var(--muted)">Primera vez — establecé tu peso base</span>';
+  if(ls){
+    const summary=ls.sets.map(s=>`${s.weight}kg×${s.reps}`).join(' · ');
+    lastHtml=`Último <span style="color:var(--muted)">(${fdate(ls.date)})</span>: <b>${summary}</b>`;
+  }
+  document.getElementById('sh-ex-last').innerHTML=lastHtml;
 
   document.getElementById('sh-ex-body').innerHTML=`
     <div class="set-head">
