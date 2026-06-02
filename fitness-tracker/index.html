@@ -21,7 +21,7 @@ body{background:var(--bg);color:var(--ink);font-family:'Barlow',sans-serif;overf
                    radial-gradient(circle at 90% 8%,rgba(255,122,61,.04),transparent 35%);}
 
 /* ── PAGES ─────────────────────────────────── */
-.page{position:fixed;inset:0;bottom:calc(var(--nav-h) + var(--safe-b));
+.page{position:fixed;top:0;left:0;right:0;bottom:calc(var(--nav-h) + var(--safe-b));
   overflow-y:auto;-webkit-overflow-scrolling:touch;display:none;padding:0 16px 28px}
 .page.active{display:block}
 
@@ -585,7 +585,7 @@ function renderGym(){
       :cnt>0
       ?`<div class="ex-meta partial">${cnt}/${total} series · desc ${ex.rest}</div>`
       :`<div class="ex-meta">desc ${ex.rest}</div>`;
-    return`<button class="ex-row ${cls}" onclick="openExSheet('${ex.id}',${day.id})">
+    return`<button class="ex-row ${cls}" ontouchstart="" onclick="openExSheet('${ex.id}',${day.id})">
       <div class="ex-num">${ex.num}</div>
       <div>
         <div class="ex-name">${ex.name}${ex.note?`<small>${ex.note}</small>`:''}</div>
