@@ -77,7 +77,7 @@ body{background:var(--bg);color:var(--ink);font-family:'Barlow',sans-serif;overf
 /* ── EXERCISE ROWS ─────────────────────────────── */
 .ex-row{background:var(--panel);border:1px solid var(--line);border-top:none;
   padding:13px 14px;display:grid;grid-template-columns:26px 1fr auto;
-  gap:0 10px;align-items:center;cursor:pointer;transition:background .15s;user-select:none}
+  gap:0 10px;align-items:center;cursor:pointer;transition:background .15s;user-select:none;touch-action:manipulation}
 .ex-row:first-of-type{border-top:1px solid var(--line)}
 .ex-row:nth-child(even){background:var(--panel-2)}
 .ex-row:active{background:var(--line)}
@@ -102,7 +102,7 @@ body{background:var(--bg);color:var(--ink);font-family:'Barlow',sans-serif;overf
 .week-controls{display:flex;align-items:center;gap:8px;padding:6px 0 12px}
 .wk-btn{background:var(--panel);border:1px solid var(--line);color:var(--ink);
   width:34px;height:34px;display:flex;align-items:center;justify-content:center;
-  cursor:pointer;font-size:18px;flex-shrink:0;transition:background .15s}
+  cursor:pointer;font-size:18px;flex-shrink:0;transition:background .15s;touch-action:manipulation}
 .wk-btn:active{background:var(--line)}
 .wk-num{font-family:'Anton',sans-serif;font-size:22px;color:var(--acc);text-align:center;flex:1}
 .wk-phase{font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);
@@ -537,7 +537,7 @@ function renderHoy(){
       <div class="tg-kicker">${gymDay.weekday} · Semana ${S.week}/7 · ${phase?.rpe||''}</div>
       <div class="tg-name">${gymDay.name}</div>
       <div class="tg-focus">${gymDay.focus}</div>
-      <div class="tg-link" onclick="goGym(${gymDay.id})">Abrir entrenamiento →</div>
+      <div class="tg-link" data-gogym="${gymDay.id}">Abrir entrenamiento →</div>
     </div>`:`
     <div class="rest-card">
       <div class="rest-emoji">🔋</div>
@@ -554,7 +554,7 @@ function renderHoy(){
     <div class="sec-label">Nutrición de hoy</div>
     ${macroGrid(nut)}
     <div class="sec-label">Peso corporal</div>
-    <div class="bw-card" onclick="openBwSheet()">
+    <div class="bw-card">
       <div class="bw-current">${bw?bw.weight:'—'}<small>${bw?fdate(bw.date):'Sin registros aún'}</small></div>
       <div class="bw-link">+ Registrar</div>
     </div>`;
@@ -569,7 +569,7 @@ function renderGym(){
   const phase=PHASES[Math.min(S.week,7)];
 
   const tabs=DAYS.map(d=>`
-    <button class="day-tab ${d.id===S.selDay?'active':''}" onclick="selDay(${d.id})">
+    <button class="day-tab ${d.id===S.selDay?'active':''}" data-selday="${d.id}" touch-action="manipulation">
       <span class="n">${d.label}</span>${d.name}
     </button>`).join('');
 
@@ -584,7 +584,7 @@ function renderGym(){
       :cnt>0
       ?`<div class="ex-meta partial">${cnt}/${total} series · desc ${ex.rest}</div>`
       :`<div class="ex-meta">desc ${ex.rest}</div>`;
-    return`<div class="ex-row ${cls}" onclick="openExSheet('${ex.id}',${day.id})">
+    return`<div class="ex-row ${cls}" data-exid="${ex.id}" data-dayid="${day.id}">
       <div class="ex-num">${ex.num}</div>
       <div>
         <div class="ex-name">${ex.name}${ex.note?`<small>${ex.note}</small>`:''}</div>
@@ -616,12 +616,12 @@ function renderGym(){
       ${cardio}
       <div class="sec-label" style="margin-top:20px">Semana del ciclo</div>
       <div class="week-controls">
-        <button class="wk-btn" onclick="chgWeek(-1)">−</button>
+        <button class="wk-btn" data-wkdelta="-1">−</button>
         <div>
           <div class="wk-num">${S.week}<span style="font-family:'Space Mono',monospace;font-size:12px;color:var(--muted)">/7</span></div>
           <div class="wk-phase">${phase?.label}</div>
         </div>
-        <button class="wk-btn" onclick="chgWeek(1)">+</button>
+        <button class="wk-btn" data-wkdelta="1">+</button>
       </div>
     </div>`;
 }
@@ -647,7 +647,7 @@ function renderComida(){
           :`<div class="meal-macros" style="color:var(--muted)">Sin registrar · ${m.desc}</div>`
         }
       </div>
-      <button class="log-btn ${has?'logged':''}" onclick="openMealSheet(${m.id})">${has?'✓':'+'}</button>
+      <button class="log-btn ${has?'logged':''}" data-mealid="${m.id}" touch-action="manipulation">${has?'✓':'+'}</button>
     </div>`;
   }).join('');
 
@@ -726,7 +726,7 @@ function renderStats(){
     ${prRows?`<div class="sec-label">PRs · Movimientos principales</div>${prRows}`:''}
     <div class="sec-label">Peso corporal</div>
     ${bwRows||'<div class="empty"><b>Sin registros aún</b>Andá a Hoy y registrá tu peso.</div>'}
-    ${recentSess?`<div class="sec-label">Historial de sesiones</div>${recentSess}`:''}}`;
+    ${recentSess?`<div class="sec-label">Historial de sesiones</div>${recentSess}`:''}` ;
 }
 
 // ═══════════════════════════════════════════════
@@ -905,8 +905,31 @@ function saveBw(){
 }
 
 // ═══════════════════════════════════════════════
-// EVENTS
+// EVENTS — event delegation for iOS Safari compatibility
 // ═══════════════════════════════════════════════
+function handleTap(e){
+  const t=e.target;
+  // Exercise row
+  const exRow=t.closest('.ex-row');
+  if(exRow&&exRow.dataset.exid){openExSheet(exRow.dataset.exid,parseInt(exRow.dataset.dayid));return;}
+  // Day tab
+  const dayTab=t.closest('[data-selday]');
+  if(dayTab){selDay(parseInt(dayTab.dataset.selday));return;}
+  // Week buttons
+  const wkBtn=t.closest('[data-wkdelta]');
+  if(wkBtn){chgWeek(parseInt(wkBtn.dataset.wkdelta));return;}
+  // Go gym link
+  const goGymEl=t.closest('[data-gogym]');
+  if(goGymEl){goGym(parseInt(goGymEl.dataset.gogym));return;}
+  // Meal log button
+  const mealBtn=t.closest('[data-mealid]');
+  if(mealBtn&&!mealBtn.classList.contains('nav-btn')){openMealSheet(parseInt(mealBtn.dataset.mealid));return;}
+  // BW card
+  if(t.closest('.bw-card')){openBwSheet();return;}
+  // Overlay close
+  if(t.id==='overlay'||t===document.getElementById('overlay')){closeSheet();return;}
+}
+document.addEventListener('click',handleTap);
 document.getElementById('overlay').addEventListener('click',closeSheet);
 document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.p)));
 document.getElementById('save-meal').addEventListener('click',saveMeal);
