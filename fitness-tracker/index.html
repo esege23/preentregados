@@ -20,12 +20,12 @@ body{background:var(--bg);color:var(--ink);font-family:'Barlow',sans-serif;overf
   background-image:radial-gradient(circle at 15% 0%,rgba(205,255,58,.05),transparent 40%),
                    radial-gradient(circle at 90% 8%,rgba(255,122,61,.04),transparent 35%);}
 
-/* ── PAGES ─────────────────────────────────── */
-.page{position:fixed;inset:0;bottom:calc(var(--nav-h) + var(--safe-b));
+/* ── PAGES ───────────────────────────────────────────── */
+.page{position:fixed;top:0;left:0;right:0;bottom:calc(var(--nav-h) + var(--safe-b));
   overflow-y:auto;-webkit-overflow-scrolling:touch;display:none;padding:0 16px 28px}
 .page.active{display:block}
 
-/* ── BOTTOM NAV ─────────────────────────────── */
+/* ── BOTTOM NAV ──────────────────────────────────────────── */
 .nav{position:fixed;bottom:0;left:0;right:0;
   height:calc(var(--nav-h) + var(--safe-b));padding-bottom:var(--safe-b);
   background:var(--panel);border-top:1px solid var(--line);display:flex;z-index:100}
@@ -35,7 +35,7 @@ body{background:var(--bg);color:var(--ink);font-family:'Barlow',sans-serif;overf
 .nav-btn svg{width:22px;height:22px}
 .nav-btn.active{color:var(--acc)}
 
-/* ── TYPOGRAPHY ─────────────────────────────── */
+/* ── TYPOGRAPHY ───────────────────────────────────────────── */
 .page-header{padding:28px 0 18px;border-bottom:1px solid var(--line);margin-bottom:20px}
 .kicker{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.28em;
   text-transform:uppercase;color:var(--acc-dim);margin-bottom:8px}
@@ -47,7 +47,7 @@ body{background:var(--bg);color:var(--ink);font-family:'Barlow',sans-serif;overf
   display:flex;align-items:center;gap:10px}
 .sec-label::after{content:"";flex:1;height:1px;background:var(--line)}
 
-/* ── MACRO CARDS ─────────────────────────────── */
+/* ── MACRO CARDS ────────────────────────────────────────────── */
 .macro-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
 .mc{background:var(--panel);border:1px solid var(--line);padding:12px 14px}
 .mc.full{grid-column:span 2}
@@ -61,7 +61,7 @@ body{background:var(--bg);color:var(--ink);font-family:'Barlow',sans-serif;overf
 .mc-num .u{font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);margin-left:2px}
 .mc-num .t{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted)}
 
-/* ── DAY TABS ─────────────────────────────────── */
+/* ── DAY TABS ────────────────────────────────────────────────── */
 .day-tabs{display:flex;gap:6px;position:sticky;top:0;background:var(--bg);z-index:10;
   padding:12px 0 10px;margin:0 -16px;padding-left:16px;padding-right:16px;
   overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;
@@ -74,7 +74,7 @@ body{background:var(--bg);color:var(--ink);font-family:'Barlow',sans-serif;overf
 .day-tab.active{background:var(--acc);border-color:var(--acc);color:#10120a}
 .day-tab.active .n{color:#10120a}
 
-/* ── EXERCISE ROWS ─────────────────────────────── */
+/* ── EXERCISE ROWS ────────────────────────────────────────────── */
 .ex-row{background:var(--panel);border:1px solid var(--line);border-top:none;
   padding:13px 14px;display:grid;grid-template-columns:26px 1fr auto;
   gap:0 10px;align-items:center;cursor:pointer;transition:background .15s;user-select:none;
@@ -94,7 +94,7 @@ body{background:var(--bg);color:var(--ink);font-family:'Barlow',sans-serif;overf
 .ex-sets{font-family:'Anton',sans-serif;font-size:17px;color:var(--acc);letter-spacing:.5px}
 .ex-lastw{font-family:'Space Mono',monospace;font-size:9.5px;color:var(--muted);margin-top:2px}
 
-/* ── WEEK WIDGET ─────────────────────────────────── */
+/* ── WEEK WIDGET ────────────────────────────────────────────────── */
 .week-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 0 6px}
 .week-badge{font-family:'Space Mono',monospace;font-size:11px;background:var(--panel);
   border:1px solid var(--line);padding:5px 10px;color:var(--muted)}
@@ -109,14 +109,14 @@ body{background:var(--bg);color:var(--ink);font-family:'Barlow',sans-serif;overf
 .wk-phase{font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);
   text-transform:uppercase;letter-spacing:.1em;text-align:center}
 
-/* ── CARDIO BLOCK ─────────────────────────────────── */
+/* ── CARDIO BLOCK ───────────────────────────────────────────────── */
 .cardio-block{background:linear-gradient(135deg,rgba(255,122,61,.14),rgba(205,255,58,.07));
   border:1px solid var(--warn);padding:14px 16px;margin-top:8px}
 .cardio-title{font-family:'Anton',sans-serif;font-size:15px;color:var(--warn);
   text-transform:uppercase;letter-spacing:.5px}
 .cardio-block p{font-size:13px;color:var(--ink);margin-top:5px}
 
-/* ── MEAL ROWS ─────────────────────────────────── */
+/* ── MEAL ROWS ───────────────────────────────────────────────── */
 .meal-row{background:var(--panel);border:1px solid var(--line);border-top:none;
   padding:13px 14px;display:grid;grid-template-columns:44px 1fr 38px;gap:0 10px;align-items:center}
 .meal-row:first-of-type{border-top:1px solid var(--line)}
@@ -134,7 +134,7 @@ body{background:var(--bg);color:var(--ink);font-family:'Barlow',sans-serif;overf
 .log-btn:active{background:var(--line)}
 .log-btn.logged{background:rgba(205,255,58,.15);border-color:var(--acc-dim);font-size:14px}
 
-/* ── STAT CARDS ─────────────────────────────────── */
+/* ── STAT CARDS ───────────────────────────────────────────────── */
 .stat-card{background:var(--panel);border:1px solid var(--line);padding:16px;margin-bottom:8px}
 .stat-sh{font-family:'Space Mono',monospace;font-size:9.5px;letter-spacing:.18em;
   text-transform:uppercase;color:var(--muted);margin-bottom:8px}
@@ -142,14 +142,14 @@ body{background:var(--bg);color:var(--ink);font-family:'Barlow',sans-serif;overf
 .stat-val .u{font-family:'Barlow',sans-serif;font-size:16px;color:var(--muted);margin-left:4px}
 .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
 
-/* ── CYCLE BAR ─────────────────────────────────── */
+/* ── CYCLE BAR ───────────────────────────────────────────────── */
 .cycle-bar{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin:10px 0}
 .cw{height:7px;background:var(--panel-2);border-radius:4px}
 .cw.done{background:var(--acc-dim)}
 .cw.current{background:var(--acc)}
 .cw.deload{background:var(--warn)}
 
-/* ── PR + HISTORY ─────────────────────────────────── */
+/* ── PR + HISTORY ───────────────────────────────────────────────── */
 .pr-row{background:var(--panel);border:1px solid var(--line);border-top:none;
   padding:10px 14px;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
 .pr-row:first-child{border-top:1px solid var(--line)}
@@ -165,7 +165,7 @@ body{background:var(--bg);color:var(--ink);font-family:'Barlow',sans-serif;overf
 .hist-day{font-size:13px;font-weight:600}
 .hist-sets{font-family:'Space Mono',monospace;font-size:9.5px;color:var(--acc);text-align:right}
 
-/* ── WEIGHT LIST ─────────────────────────────────── */
+/* ── WEIGHT LIST ───────────────────────────────────────────────── */
 .bw-row{display:flex;justify-content:space-between;font-family:'Space Mono',monospace;
   font-size:11px;padding:8px 12px;background:var(--panel);border:1px solid var(--line);
   border-top:none;color:var(--muted)}
@@ -174,7 +174,7 @@ body{background:var(--bg);color:var(--ink);font-family:'Barlow',sans-serif;overf
 .up{color:var(--acc)}
 .dn{color:var(--warn)}
 
-/* ── TODAY CARDS ─────────────────────────────────── */
+/* ── TODAY CARDS ───────────────────────────────────────────────── */
 .today-gym-card{background:linear-gradient(135deg,var(--panel),var(--panel-2));
   border:1px solid var(--line);border-left:4px solid var(--acc);padding:16px;margin-bottom:8px}
 .tg-kicker{font-family:'Space Mono',monospace;font-size:9.5px;letter-spacing:.2em;
@@ -195,7 +195,7 @@ body{background:var(--bg);color:var(--ink);font-family:'Barlow',sans-serif;overf
 .bw-link{font-family:'Space Mono',monospace;font-size:10px;color:var(--acc);
   text-transform:uppercase;letter-spacing:.12em}
 
-/* ── OVERLAY + SHEET ─────────────────────────────────── */
+/* ── OVERLAY + SHEET ───────────────────────────────────────────────── */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:200;
   display:none;opacity:0;transition:opacity .2s}
 .overlay.shown{opacity:1}
@@ -213,7 +213,7 @@ body{background:var(--bg);color:var(--ink);font-family:'Barlow',sans-serif;overf
 .sheet-last b{color:var(--acc)}
 .sheet-body{overflow-y:auto;flex:1;padding:14px 18px}
 
-/* ── SET INPUTS ─────────────────────────────────── */
+/* ── SET INPUTS ───────────────────────────────────────────────── */
 .set-head{display:grid;grid-template-columns:28px 1fr 1fr 38px;gap:6px;margin-bottom:6px}
 .set-col-label{font-family:'Space Mono',monospace;font-size:9px;text-transform:uppercase;
   letter-spacing:.12em;color:var(--muted);text-align:center}
@@ -230,7 +230,7 @@ body{background:var(--bg);color:var(--ink);font-family:'Barlow',sans-serif;overf
   font-size:15px;transition:background .12s,border .12s;user-select:none}
 .set-check.on{background:rgba(205,255,58,.18);border-color:var(--acc);color:var(--acc)}
 
-/* ── FORM ─────────────────────────────────── */
+/* ── FORM ───────────────────────────────────────────────── */
 .fg{margin-bottom:14px}
 .flabel{font-family:'Space Mono',monospace;font-size:9.5px;letter-spacing:.16em;
   text-transform:uppercase;color:var(--muted);margin-bottom:6px;display:block}
@@ -246,7 +246,7 @@ textarea.fin{resize:none;height:68px;font-size:13.5px;font-weight:400}
   padding:10px;background:var(--panel-2);border:1px solid var(--line);margin-bottom:14px}
 .kcal-box small{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);display:block;margin-top:2px}
 
-/* ── BUTTONS ─────────────────────────────────── */
+/* ── BUTTONS ───────────────────────────────────────────────── */
 .btn-p{background:var(--acc);color:#10120a;font-family:'Anton',sans-serif;font-size:18px;
   letter-spacing:.5px;text-transform:uppercase;border:none;padding:15px;width:100%;cursor:pointer;transition:opacity .15s}
 .btn-p:active{opacity:.8}
@@ -585,7 +585,7 @@ function renderGym(){
       :cnt>0
       ?`<div class="ex-meta partial">${cnt}/${total} series · desc ${ex.rest}</div>`
       :`<div class="ex-meta">desc ${ex.rest}</div>`;
-    return`<button class="ex-row ${cls}" onclick="openExSheet('${ex.id}',${day.id})">
+    return`<button class="ex-row ${cls}" ontouchstart="" onclick="openExSheet('${ex.id}',${day.id})">
       <div class="ex-num">${ex.num}</div>
       <div>
         <div class="ex-name">${ex.name}${ex.note?`<small>${ex.note}</small>`:''}</div>
@@ -727,7 +727,7 @@ function renderStats(){
     ${prRows?`<div class="sec-label">PRs · Movimientos principales</div>${prRows}`:''}
     <div class="sec-label">Peso corporal</div>
     ${bwRows||'<div class="empty"><b>Sin registros aún</b>Andá a Hoy y registrá tu peso.</div>'}
-    ${recentSess?`<div class="sec-label">Historial de sesiones</div>${recentSess}`:''}` ;
+    ${recentSess?`<div class="sec-label">Historial de sesiones</div>${recentSess}`:''}}`;
 }
 
 // ═══════════════════════════════════════════════
@@ -774,7 +774,7 @@ function closeSheet(){
   setTimeout(()=>{ov.style.display='none';activeSheet=null},300);
 }
 
-// ── Exercise sheet ───────────────────────────────
+// ── Exercise sheet ──────────────────────────────────────────────
 function openExSheet(exId,dayId){
   curExId=exId;curDayId=dayId;
   const day=DAYS.find(d=>d.id===dayId);
@@ -839,7 +839,7 @@ function saveEx(numSets){
   setTimeout(()=>{renderGym();if(S.page==='hoy')renderHoy()},320);
 }
 
-// ── Meal sheet ───────────────────────────────────
+// ── Meal sheet ─────────────────────────────────────────────────
 function openMealSheet(mealId){
   curMealId=mealId;
   const meal=MEALS.find(m=>m.id===mealId);
@@ -882,7 +882,7 @@ function delMeal(){
   setTimeout(()=>{renderComida();renderHoy()},320);
 }
 
-// ── Body weight sheet ────────────────────────────
+// ── Body weight sheet ────────────────────────────────────────────
 function openBwSheet(){
   const bw=latestBw();
   document.getElementById('in-bw').value=bw?.weight||'';
