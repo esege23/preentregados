@@ -196,7 +196,7 @@ body{background:var(--bg);color:var(--ink);font-family:'Barlow',sans-serif;overf
   text-transform:uppercase;letter-spacing:.12em}
 
 /* ── OVERLAY + SHEET ─────────────────────────────────── */
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:200;
+.overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.72);z-index:200;
   display:none;opacity:0;transition:opacity .2s}
 .overlay.shown{opacity:1}
 .sheet{position:fixed;bottom:0;left:0;right:0;background:var(--panel);
@@ -763,7 +763,8 @@ function openSheet(id){
   const sh=document.getElementById(id);
   activeSheet=id;
   ov.style.display='flex';
-  requestAnimationFrame(()=>{ov.classList.add('shown');sh.classList.add('shown')});
+  sh.style.display='flex';
+  setTimeout(()=>{ov.classList.add('shown');sh.classList.add('shown')},10);
 }
 
 function closeSheet(){
