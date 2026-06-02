@@ -77,7 +77,7 @@ body{background:var(--bg);color:var(--ink);font-family:'Barlow',sans-serif;overf
 /* ── EXERCISE ROWS ─────────────────────────────── */
 .ex-row{background:var(--panel);border:1px solid var(--line);border-top:none;
   padding:13px 14px;display:grid;grid-template-columns:26px 1fr auto;
-  gap:0 10px;align-items:center;cursor:pointer;transition:background .15s;user-select:none;touch-action:manipulation}
+  gap:0 10px;align-items:center;cursor:pointer;transition:background .15s;user-select:none}
 .ex-row:first-of-type{border-top:1px solid var(--line)}
 .ex-row:nth-child(even){background:var(--panel-2)}
 .ex-row:active{background:var(--line)}
@@ -102,7 +102,7 @@ body{background:var(--bg);color:var(--ink);font-family:'Barlow',sans-serif;overf
 .week-controls{display:flex;align-items:center;gap:8px;padding:6px 0 12px}
 .wk-btn{background:var(--panel);border:1px solid var(--line);color:var(--ink);
   width:34px;height:34px;display:flex;align-items:center;justify-content:center;
-  cursor:pointer;font-size:18px;flex-shrink:0;transition:background .15s;touch-action:manipulation}
+  cursor:pointer;font-size:18px;flex-shrink:0;transition:background .15s}
 .wk-btn:active{background:var(--line)}
 .wk-num{font-family:'Anton',sans-serif;font-size:22px;color:var(--acc);text-align:center;flex:1}
 .wk-phase{font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);
@@ -584,7 +584,7 @@ function renderGym(){
       :cnt>0
       ?`<div class="ex-meta partial">${cnt}/${total} series · desc ${ex.rest}</div>`
       :`<div class="ex-meta">desc ${ex.rest}</div>`;
-    return`<div class="ex-row ${cls}" data-exid="${ex.id}" data-dayid="${day.id}" onclick="void(0)">
+    return`<div class="ex-row ${cls}" onclick="openExSheet('${ex.id}',${day.id})">
       <div class="ex-num">${ex.num}</div>
       <div>
         <div class="ex-name">${ex.name}${ex.note?`<small>${ex.note}</small>`:''}</div>
@@ -624,10 +624,6 @@ function renderGym(){
         <button class="wk-btn" onclick="chgWeek(1)">+</button>
       </div>
     </div>`;
-  // iOS Safari: attach click listeners directly to ex-rows after innerHTML
-  p.querySelectorAll('.ex-row').forEach(row=>{
-    row.addEventListener('click',()=>openExSheet(row.dataset.exid,parseInt(row.dataset.dayid)));
-  });
 }
 
 // ═══════════════════════════════════════════════
@@ -785,24 +781,19 @@ function openExSheet(exId,dayId){
   const ls=lastSession(exId);
   const t=tod();
   const saved=(S.workouts[t]?.exercises?.[exId])||[];
-  // Pre-fill from today's log if exists, else from last session (weight+reps), else blank
-  const fallback=i=>({
-    weight:ls?.sets[i]?.weight||'',
-    reps:ls?.sets[i]?.reps||'',
-    done:false
-  });
   const sets=saved.length>=ex.sets
     ?saved.slice(0,ex.sets)
-    :[...saved,...Array.from({length:ex.sets-saved.length},(_,i)=>fallback(saved.length+i))];
+    :[...saved,...Array.from({length:ex.sets-saved.length},(_,i)=>({
+        weight:ls?.sets[saved.length+i]?.weight||'',
+        reps:ls?.sets[saved.length+i]?.reps||'',
+        done:false
+      }))];
 
   document.getElementById('sh-ex-name').textContent=ex.name;
   document.getElementById('sh-ex-plan').textContent=`${ex.sets} series × ${repsStr(ex)} reps · desc ${ex.rest}`;
-  // Show last session summary: weight + reps per set
-  let lastHtml='<span style="color:var(--muted)">Primera vez — establecé tu peso base</span>';
-  if(ls){
-    const summary=ls.sets.map(s=>`${s.weight}kg×${s.reps}`).join(' · ');
-    lastHtml=`Último <span style="color:var(--muted)">(${fdate(ls.date)})</span>: <b>${summary}</b>`;
-  }
+  const lastHtml=ls
+    ?`Último (${fdate(ls.date)}): <b>${ls.sets.map(s=>`${s.weight}kg×${s.reps}`).join(' · ')}</b>`
+    :'<span style="color:var(--muted)">Primera vez — establecé tu peso base</span>';
   document.getElementById('sh-ex-last').innerHTML=lastHtml;
 
   document.getElementById('sh-ex-body').innerHTML=`
