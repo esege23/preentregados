@@ -537,7 +537,7 @@ function renderHoy(){
       <div class="tg-kicker">${gymDay.weekday} · Semana ${S.week}/7 · ${phase?.rpe||''}</div>
       <div class="tg-name">${gymDay.name}</div>
       <div class="tg-focus">${gymDay.focus}</div>
-      <div class="tg-link" data-gogym="${gymDay.id}">Abrir entrenamiento →</div>
+      <div class="tg-link" onclick="goGym(${gymDay.id})">Abrir entrenamiento →</div>
     </div>`:`
     <div class="rest-card">
       <div class="rest-emoji">🔋</div>
@@ -554,7 +554,7 @@ function renderHoy(){
     <div class="sec-label">Nutrición de hoy</div>
     ${macroGrid(nut)}
     <div class="sec-label">Peso corporal</div>
-    <div class="bw-card">
+    <div class="bw-card" onclick="openBwSheet()">
       <div class="bw-current">${bw?bw.weight:'—'}<small>${bw?fdate(bw.date):'Sin registros aún'}</small></div>
       <div class="bw-link">+ Registrar</div>
     </div>`;
@@ -569,7 +569,7 @@ function renderGym(){
   const phase=PHASES[Math.min(S.week,7)];
 
   const tabs=DAYS.map(d=>`
-    <button class="day-tab ${d.id===S.selDay?'active':''}" data-selday="${d.id}" touch-action="manipulation">
+    <button class="day-tab ${d.id===S.selDay?'active':''}" onclick="selDay(${d.id})">
       <span class="n">${d.label}</span>${d.name}
     </button>`).join('');
 
@@ -584,7 +584,7 @@ function renderGym(){
       :cnt>0
       ?`<div class="ex-meta partial">${cnt}/${total} series · desc ${ex.rest}</div>`
       :`<div class="ex-meta">desc ${ex.rest}</div>`;
-    return`<div class="ex-row ${cls}" data-exid="${ex.id}" data-dayid="${day.id}">
+    return`<div class="ex-row ${cls}" data-exid="${ex.id}" data-dayid="${day.id}" onclick="void(0)">
       <div class="ex-num">${ex.num}</div>
       <div>
         <div class="ex-name">${ex.name}${ex.note?`<small>${ex.note}</small>`:''}</div>
@@ -616,14 +616,18 @@ function renderGym(){
       ${cardio}
       <div class="sec-label" style="margin-top:20px">Semana del ciclo</div>
       <div class="week-controls">
-        <button class="wk-btn" data-wkdelta="-1">−</button>
+        <button class="wk-btn" onclick="chgWeek(-1)">−</button>
         <div>
           <div class="wk-num">${S.week}<span style="font-family:'Space Mono',monospace;font-size:12px;color:var(--muted)">/7</span></div>
           <div class="wk-phase">${phase?.label}</div>
         </div>
-        <button class="wk-btn" data-wkdelta="1">+</button>
+        <button class="wk-btn" onclick="chgWeek(1)">+</button>
       </div>
     </div>`;
+  // iOS Safari: attach click listeners directly to ex-rows after innerHTML
+  p.querySelectorAll('.ex-row').forEach(row=>{
+    row.addEventListener('click',()=>openExSheet(row.dataset.exid,parseInt(row.dataset.dayid)));
+  });
 }
 
 // ═══════════════════════════════════════════════
@@ -647,7 +651,7 @@ function renderComida(){
           :`<div class="meal-macros" style="color:var(--muted)">Sin registrar · ${m.desc}</div>`
         }
       </div>
-      <button class="log-btn ${has?'logged':''}" data-mealid="${m.id}" touch-action="manipulation">${has?'✓':'+'}</button>
+      <button class="log-btn ${has?'logged':''}" onclick="openMealSheet(${m.id})">${has?'✓':'+'}</button>
     </div>`;
   }).join('');
 
@@ -905,31 +909,8 @@ function saveBw(){
 }
 
 // ═══════════════════════════════════════════════
-// EVENTS — event delegation for iOS Safari compatibility
+// EVENTS
 // ═══════════════════════════════════════════════
-function handleTap(e){
-  const t=e.target;
-  // Exercise row
-  const exRow=t.closest('.ex-row');
-  if(exRow&&exRow.dataset.exid){openExSheet(exRow.dataset.exid,parseInt(exRow.dataset.dayid));return;}
-  // Day tab
-  const dayTab=t.closest('[data-selday]');
-  if(dayTab){selDay(parseInt(dayTab.dataset.selday));return;}
-  // Week buttons
-  const wkBtn=t.closest('[data-wkdelta]');
-  if(wkBtn){chgWeek(parseInt(wkBtn.dataset.wkdelta));return;}
-  // Go gym link
-  const goGymEl=t.closest('[data-gogym]');
-  if(goGymEl){goGym(parseInt(goGymEl.dataset.gogym));return;}
-  // Meal log button
-  const mealBtn=t.closest('[data-mealid]');
-  if(mealBtn&&!mealBtn.classList.contains('nav-btn')){openMealSheet(parseInt(mealBtn.dataset.mealid));return;}
-  // BW card
-  if(t.closest('.bw-card')){openBwSheet();return;}
-  // Overlay close
-  if(t.id==='overlay'||t===document.getElementById('overlay')){closeSheet();return;}
-}
-document.addEventListener('click',handleTap);
 document.getElementById('overlay').addEventListener('click',closeSheet);
 document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.p)));
 document.getElementById('save-meal').addEventListener('click',saveMeal);
