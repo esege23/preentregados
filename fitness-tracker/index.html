@@ -651,7 +651,46 @@ function rSta(){
     ${prRows?`<div class="sl">PRs · Movimientos principales</div>${prRows}`:''}
     <div class="sl">Peso corporal</div>
     ${bwRows||'<div class="empty"><b>Sin registros aún</b>Andá a Hoy y registrá tu peso.</div>'}
-    ${histRows?`<div class="sl">Historial</div>${histRows}`:''}`;
+    ${histRows?`<div class="sl">Historial</div>${histRows}`:''}
+    <div class="sl">Backup</div>
+    <div style="background:var(--panel);border:1px solid var(--line);padding:14px 16px;margin-bottom:6px;font-size:12px;color:var(--muted);border-left:3px solid var(--dim)">
+      Safari puede borrar datos si no usás el app por varios días.<br>
+      <b style="color:var(--ink)">Agregalo a la pantalla de inicio</b> para storage persistente.
+    </div>
+    <button class="btnp" onclick="exportData()" style="margin-bottom:6px">Exportar datos (backup)</button>
+    <button class="btns" onclick="importData()">Importar backup</button>`;
+}
+
+// ── BACKUP ───────────────────────────────────────────
+function exportData(){
+  const json=JSON.stringify(S,null,2);
+  const blob=new Blob([json],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`fittracker-backup-${tod()}.json`;
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);URL.revokeObjectURL(url);
+}
+
+function importData(){
+  const inp=document.createElement('input');
+  inp.type='file';inp.accept='.json,application/json';
+  inp.onchange=e=>{
+    const f=e.target.files[0];if(!f)return;
+    const r=new FileReader();
+    r.onload=ev=>{
+      try{
+        const parsed=JSON.parse(ev.target.result);
+        if(!parsed.workouts)throw new Error('Archivo inválido');
+        S={...S,...parsed};
+        save();
+        nav(S.pg||'hoy');
+        alert('Datos restaurados correctamente.');
+      }catch(err){alert('Error al importar: '+err.message);}
+    };
+    r.readAsText(f);
+  };
+  inp.click();
 }
 
 // ── NAV ──────────────────────────────────────────────
