@@ -86,15 +86,21 @@ html,body{height:100%;background:var(--bg);color:var(--ink);font-family:'Barlow'
 .dt.on b{color:#10120a}
 
 /* ── EXERCISE BUTTONS ── */
-.ex{width:100%;background:var(--panel);border:1px solid var(--line);border-top:none;
+.ex-wrap{display:flex;border:1px solid var(--line);border-top:none}
+.ex-wrap:first-of-type{border-top:1px solid var(--line)}
+.ex-wrap:nth-child(even) .ex,.ex-wrap:nth-child(even) .ex-ed{background:var(--panel2)}
+.ex-wrap.done{border-left:3px solid var(--acc)}
+.ex-wrap.part{border-left:3px solid var(--dim)}
+.ex{flex:1;min-width:0;background:var(--panel);border:none;
   padding:13px 14px;display:grid;grid-template-columns:26px 1fr auto;
   gap:0 10px;align-items:center;cursor:pointer;text-align:left;
   font-family:'Barlow',sans-serif;-webkit-appearance:none;appearance:none}
-.ex:first-of-type{border-top:1px solid var(--line)}
-.ex:nth-child(even){background:var(--panel2)}
 .ex:active{background:var(--line)}
-.ex.done{border-left:3px solid var(--acc)}
-.ex.part{border-left:3px solid var(--dim)}
+.ex-ed{width:40px;flex-shrink:0;background:var(--panel);border:none;
+  border-left:1px solid var(--line);color:var(--dim);font-size:17px;
+  cursor:pointer;-webkit-appearance:none;appearance:none;
+  display:flex;align-items:center;justify-content:center}
+.ex-ed:active{background:var(--acc);color:#10120a}
 .ex-num{font-family:'Space Mono',monospace;font-size:10px;color:var(--dim)}
 .ex-name{font-size:15px;font-weight:600;color:var(--ink)}
 .ex-name small{display:block;font-size:11px;color:var(--muted);font-weight:400;margin-top:1px}
@@ -206,6 +212,26 @@ html,body{height:100%;background:var(--bg);color:var(--ink);font-family:'Barlow'
 .bwr:first-child{border-top:1px solid var(--line)}
 .bwr b{color:var(--ink)}
 .up{color:var(--acc)}.dn{color:var(--warn)}
+
+/* ── EXERCISE SELECTOR ── */
+.grp-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:10px;margin-bottom:10px;
+  scrollbar-width:none;border-bottom:1px solid var(--line)}
+.grp-tabs::-webkit-scrollbar{display:none}
+.grp-tab{flex:0 0 auto;background:var(--panel2);border:1px solid var(--line);
+  color:var(--muted);font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.08em;
+  padding:7px 10px;cursor:pointer;-webkit-appearance:none;appearance:none;white-space:nowrap;
+  text-transform:uppercase}
+.grp-tab.on{background:var(--acc);border-color:var(--acc);color:#10120a}
+.ex-items{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+.ex-pick{background:var(--panel2);border:1px solid var(--line);color:var(--ink);
+  font-family:'Barlow',sans-serif;font-size:14px;font-weight:600;
+  padding:12px 14px;text-align:left;cursor:pointer;-webkit-appearance:none;appearance:none;
+  border-radius:0}
+.ex-pick.on{background:rgba(205,255,58,.15);border-color:var(--acc);color:var(--acc)}
+.ex-pick:active{background:var(--line)}
+.cur-ex-tag{font-family:'Space Mono',monospace;font-size:9px;color:var(--dim);
+  padding:8px 0 12px;border-bottom:1px solid var(--line);margin-bottom:10px}
+.cur-ex-tag b{color:var(--ink)}
 
 /* ── SET INPUTS ── */
 .sh{display:grid;grid-template-columns:28px 1fr 1fr 38px;gap:4px;margin-bottom:6px}
@@ -320,6 +346,15 @@ textarea.fi{resize:none;height:68px;font-size:13.5px;font-weight:400}
   </div>
 </div>
 
+<div class="sheet" id="sh-chex">
+  <div class="sh-handle"></div>
+  <div class="sh-hd">
+    <div class="sh-title">Cambiar ejercicio</div>
+    <div class="sh-sub" id="sh-chex-sub"></div>
+  </div>
+  <div class="sh-body" id="sh-chex-body"></div>
+</div>
+
 <script>
 // ── DATOS ────────────────────────────────────────────
 const DAYS=[
@@ -387,8 +422,51 @@ const PH=[null,
   {l:"Deload",rpe:"RPE 6 · 4 RIR",c:"var(--warn)"},
 ];
 
+// ── EXERCISE CATALOG ─────────────────────────────────
+const EX_LIST=[
+  {g:"🦿 Piernas",ex:[
+    "Sentadilla con barra","Sentadilla frontal","Sentadilla búlgara","Sentadilla Goblet",
+    "Prensa de piernas","Prensa de piernas a una pierna","Zancadas / Estocadas","Zancadas caminadas",
+    "Peso muerto rumano","Peso muerto sumo","Extensión de piernas en máquina",
+    "Curl de pierna tumbado / sentado","Empuje de cadera (Hip Thrust)",
+    "Elevación de pelvis (Glute Bridge)","Patada de glúteo en polea","Elevación de talones",
+  ]},
+  {g:"🦍 Pecho",ex:[
+    "Press de banca","Press inclinado","Press de banca declinado",
+    "Press de pecho en máquina (Hammer)","Press de banca con agarre cerrado",
+    "Fondos en paralelas","Flexiones con déficit","Aperturas con mancuernas",
+    "Aperturas en contractor (Pec Deck)","Cruce de poleas","Cruce de poleas desde abajo",
+  ]},
+  {g:"🪵 Espalda",ex:[
+    "Dominadas","Jalón al pecho","Jalón al pecho agarre invertido",
+    "Remo con barra / mancuerna","Remo con barra T","Remo unilateral con mancuerna",
+    "Remo en máquina Giro / Hammer","Remo al mentón con barra",
+    "Pullover con polea / mancuerna","Encogimientos de hombros","Extensiones lumbares",
+  ]},
+  {g:"💪 Bíceps",ex:[
+    "Curl con barra / mancuernas","Curl alterno con mancuernas","Curl martillo",
+    "Curl en banco inclinado","Curl predicador","Curl araña (Spider Curl)",
+    "Curl concentrado","Curl en polea baja",
+  ]},
+  {g:"📐 Tríceps",ex:[
+    "Press francés","Rompecráneos con mancuernas","Extensión de tríceps en polea",
+    "Extensiones agarre invertido","Extensión tras nuca (Copa)",
+    "Patada de tríceps en polea","Fondos entre bancos","Flexiones diamante",
+  ]},
+  {g:"☠️ Hombros",ex:[
+    "Press militar","Press Arnold","Press de hombros en máquina",
+    "Elevaciones laterales","Elevaciones laterales en polea","Elevaciones frontales",
+    "Pájaros (Elevaciones posteriores)","Cruces de poleas invertidos","Face Pull",
+  ]},
+  {g:"🧱 Abdominales",ex:[
+    "Plancha abdominal","Plancha lateral","Crunch","Encogimientos en polea alta",
+    "Elevaciones de piernas","Elevación de rodillas en silla","Giros rusos",
+    "Leñador en polea (Woodchopper)","Rueda abdominal","Bicho muerto (Dead Bug)","Abdominales de tijera",
+  ]},
+];
+
 // ── STATE ────────────────────────────────────────────
-let S={pg:'hoy',day:1,week:1,workouts:{},nutrition:{},bw:[]};
+let S={pg:'hoy',day:1,week:1,workouts:{},nutrition:{},bw:[],customEx:{}};
 function load(){
   try{
     const x=localStorage.getItem('ft3');
@@ -539,15 +617,20 @@ function rGym(){
     const part=dc>0&&!done;
     const ls=lastSess(ex.id,day.id);
     const lastTxt=ls?`S${ls.week}: ${ls.sets[0]?.w||'?'}kg`:'nuevo';
+    const cn=S.customEx?.[ex.id]?.n||ex.n;
+    const isCustom=!!S.customEx?.[ex.id];
     let stTxt=done?`<div class="ex-st ok">✓ Completado · desc ${ex.rest}</div>`
       :part?`<div class="ex-st pt">${dc}/${tot} series · desc ${ex.rest}</div>`
       :`<div class="ex-st">desc ${ex.rest}</div>`;
-    return`<button class="ex ${done?'done':part?'part':''}" onclick="openExSheet('${ex.id}',${day.id})">
-      <div class="ex-num">${ex.num}</div>
-      <div><div class="ex-name">${ex.n}${ex.note?`<small>${ex.note}</small>`:''}</div>${stTxt}</div>
-      <div class="ex-r"><div class="ex-sets">${tot}×${rs(ex)}</div>
-        <div class="ex-last">${lastTxt}</div></div>
-    </button>`;
+    return`<div class="ex-wrap ${done?'done':part?'part':''}">
+      <button class="ex" onclick="openExSheet('${ex.id}',${day.id})">
+        <div class="ex-num">${ex.num}</div>
+        <div><div class="ex-name">${cn}${ex.note&&!isCustom?`<small>${ex.note}</small>`:''}</div>${stTxt}</div>
+        <div class="ex-r"><div class="ex-sets">${tot}×${rs(ex)}</div>
+          <div class="ex-last">${lastTxt}</div></div>
+      </button>
+      <button class="ex-ed" onclick="openChExSheet('${ex.id}',${day.id})">✏</button>
+    </div>`;
   }).join('');
 
   const cardio=day.cardio?`<div class="crd"><div class="crd-t">Cardio · Zona 2</div><p>${day.cardio}</p></div>`:'';
@@ -661,6 +744,53 @@ function rSta(){
     <button class="btns" onclick="importData()">Importar backup</button>`;
 }
 
+// ── EXERCISE CUSTOMIZER ──────────────────────────────
+let curChExId=null,curChDayId=null,curChGroup=0,curChPick=null;
+
+function openChExSheet(exId,dayId){
+  curChExId=exId;curChDayId=dayId;curChGroup=0;curChPick=null;
+  const day=DAYS.find(d=>d.id===dayId);
+  const ex=day.ex.find(e=>e.id===exId);
+  const cur=S.customEx?.[exId]?.n||ex.n;
+  document.getElementById('sh-chex-sub').textContent=`Slot ${ex.num} · D${dayId} ${day.n}`;
+  renderChEx(cur);
+  openSheet('sh-chex');
+}
+
+function renderChEx(curName){
+  curName=curName||(()=>{
+    const day=DAYS.find(d=>d.id===curChDayId);
+    const ex=day?.ex.find(e=>e.id===curChExId);
+    return S.customEx?.[curChExId]?.n||ex?.n||'';
+  })();
+  const tabs=EX_LIST.map((g,i)=>`<button class="grp-tab ${i===curChGroup?'on':''}" onclick="selChGroup(${i})">${g.g}</button>`).join('');
+  const items=EX_LIST[curChGroup].ex.map((n,i)=>`<button class="ex-pick ${n===curChPick?'on':''}" onclick="pickChEx(${curChGroup},${i})">${n}</button>`).join('');
+  document.getElementById('sh-chex-body').innerHTML=`
+    <div class="cur-ex-tag">Actual: <b>${curName}</b></div>
+    <div class="grp-tabs">${tabs}</div>
+    <div class="ex-items">${items}</div>
+    <button class="btnp" onclick="saveChEx()" style="margin-top:4px">Confirmar cambio</button>
+    <button class="btns" onclick="resetChEx()">Restaurar ejercicio original</button>
+    <div style="height:12px"></div>`;
+}
+
+function selChGroup(i){curChGroup=i;curChPick=null;renderChEx();}
+function pickChEx(gi,ei){curChPick=EX_LIST[gi].ex[ei];renderChEx();}
+
+function saveChEx(){
+  if(!curChPick){closeSheet();return;}
+  if(!S.customEx)S.customEx={};
+  S.customEx[curChExId]={n:curChPick};
+  save();closeSheet();
+  setTimeout(rGym,50);
+}
+
+function resetChEx(){
+  if(S.customEx)delete S.customEx[curChExId];
+  save();closeSheet();
+  setTimeout(rGym,50);
+}
+
 // ── BACKUP ───────────────────────────────────────────
 function exportData(){
   const json=JSON.stringify(S,null,2);
@@ -740,7 +870,7 @@ function openExSheet(exId,dayId){
         done:false
       }))];
 
-  document.getElementById('sh-ex-name').textContent=ex.n;
+  document.getElementById('sh-ex-name').textContent=S.customEx?.[exId]?.n||ex.n;
   document.getElementById('sh-ex-plan').textContent=`${ex.s} series × ${rs(ex)} reps · desc ${ex.rest}`;
   document.getElementById('sh-ex-last').innerHTML=ls
     ?`Sem ${ls.week} (anterior): <b>${ls.sets.map(s=>`${s.w||'?'}kg×${s.r||'?'}`).join(' · ')}</b>`
