@@ -217,6 +217,37 @@ html,body{height:100%;background:var(--bg);color:var(--ink);font-family:'Barlow'
 .bwr b{color:var(--ink)}
 .up{color:var(--acc)}.dn{color:var(--warn)}
 
+/* ── SLEEP ── */
+.slp-hero{background:var(--panel);border:1px solid var(--line);padding:16px;
+  display:flex;align-items:center;gap:12px;cursor:pointer;
+  -webkit-appearance:none;appearance:none;width:100%;text-align:left;margin-bottom:6px}
+.slp-n{font-family:'Anton',sans-serif;font-size:38px;color:var(--acc);font-weight:400;line-height:1}
+.slp-n small{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);display:block;margin-top:2px}
+.slp-info{flex:1}
+.slp-lbl{font-family:'Space Mono',monospace;font-size:9.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);margin-bottom:6px}
+.slp-tbar{height:6px;background:var(--panel2);border-radius:3px;overflow:hidden}
+.slp-tf{height:100%;border-radius:3px;background:var(--acc)}
+.slp-tf.mid{background:var(--dim)}.slp-tf.low{background:var(--warn)}
+.slp-hist{background:var(--panel);border:1px solid var(--line);border-top:none;
+  padding:10px 14px;display:grid;grid-template-columns:48px 1fr 34px;gap:0 10px;align-items:center}
+.slp-hist:first-child{border-top:1px solid var(--line)}
+.slp-hist:nth-child(even){background:var(--panel2)}
+.slp-hd{font-family:'Space Mono',monospace;font-size:9.5px;color:var(--muted)}
+.slp-hbar{height:7px;background:var(--panel2);border-radius:4px;overflow:hidden}
+.slp-hf{height:100%;border-radius:4px;background:var(--acc)}
+.slp-hf.mid{background:var(--dim)}.slp-hf.low{background:var(--warn)}
+.slp-hv{font-family:'Anton',sans-serif;font-size:15px;color:var(--acc);text-align:right;font-weight:400}
+.slp-hv.mid{color:var(--dim)}.slp-hv.low{color:var(--warn)}
+.slp-step{display:flex;align-items:center;justify-content:center;gap:20px;padding:20px 0 10px}
+.slp-val{font-family:'Anton',sans-serif;font-size:56px;color:var(--acc);font-weight:400;
+  min-width:100px;text-align:center;line-height:1}
+.slp-val small{font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);display:block;margin-top:4px}
+.slp-pm{width:52px;height:52px;background:var(--panel2);border:1px solid var(--line);
+  color:var(--ink);font-size:26px;cursor:pointer;-webkit-appearance:none;appearance:none;
+  display:flex;align-items:center;justify-content:center}
+.slp-pm:active{background:var(--acc);color:#10120a}
+
 /* ── EXERCISE SELECTOR ── */
 .grp-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:10px;margin-bottom:10px;
   scrollbar-width:none;border-bottom:1px solid var(--line)}
@@ -290,6 +321,7 @@ textarea.fi{resize:none;height:68px;font-size:13.5px;font-weight:400}
 <div id="pg-gym" class="page"></div>
 <div id="pg-com" class="page"></div>
 <div id="pg-sta" class="page"></div>
+<div id="pg-sue" class="page"></div>
 
 <nav class="nav">
   <button class="nb on" data-pg="hoy">
@@ -303,6 +335,9 @@ textarea.fi{resize:none;height:68px;font-size:13.5px;font-weight:400}
   </button>
   <button class="nb" data-pg="sta">
     <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>Stats
+  </button>
+  <button class="nb" data-pg="sue">
+    <svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>Sueño
   </button>
 </nav>
 
@@ -347,6 +382,24 @@ textarea.fi{resize:none;height:68px;font-size:13.5px;font-weight:400}
     <div class="fg"><label class="fl">Peso (kg)</label><input class="fi" type="number" id="in-bw" min="40" max="200" step="0.1" placeholder="74.0"></div>
     <p style="font-size:13px;color:var(--muted);margin-bottom:18px">Pesate 2-3 veces por semana. Si subís ~0.25-0.4 kg/semana vas perfecto.</p>
     <button class="btnp" onclick="saveBw()">Guardar peso</button>
+  </div>
+</div>
+
+<div class="sheet" id="sh-sue">
+  <div class="sh-handle"></div>
+  <div class="sh-hd">
+    <div class="sh-title">Sueño de anoche</div>
+    <div class="sh-sub">¿Cuántas horas dormiste?</div>
+  </div>
+  <div class="sh-body">
+    <div class="slp-step">
+      <button class="slp-pm" onclick="stepSue(-0.5)">−</button>
+      <div class="slp-val" id="sue-val">7.5<small>horas</small></div>
+      <button class="slp-pm" onclick="stepSue(0.5)">+</button>
+    </div>
+    <p style="font-size:13px;color:var(--muted);text-align:center;margin-bottom:20px">Objetivo: 7-9 horas · ideal 8h por noche</p>
+    <button class="btnp" onclick="saveSue()">Guardar</button>
+    <button class="btns" onclick="delSue()">Borrar registro de hoy</button>
   </div>
 </div>
 
@@ -470,7 +523,7 @@ const EX_LIST=[
 ];
 
 // ── STATE ────────────────────────────────────────────
-let S={pg:'hoy',day:1,week:1,workouts:{},nutrition:{},bw:[],customEx:{}};
+let S={pg:'hoy',day:1,week:1,workouts:{},nutrition:{},bw:[],customEx:{},sleep:{}};
 function load(){
   try{
     const x=localStorage.getItem('ft3');
@@ -600,6 +653,12 @@ function rHoy(){
     ${gymCard}
     <div class="sl">Nutrición de hoy</div>
     ${macroGrid(nut)}
+    <div class="sl">Sueño · anoche</div>
+    ${(()=>{const sl=S.sleep?.[tod()];const c=sl?(sl.h>=7?'var(--acc)':sl.h>=6?'var(--dim)':'var(--warn)'):'var(--muted)';
+    return`<button class="bwc" onclick="openSueSheet()">
+      <div class="bwn" style="color:${c}">${sl?sl.h:'—'}<small>${sl?'horas de sueño':'Sin registro hoy'}</small></div>
+      <div class="bwl">+ Registrar</div>
+    </button>`})()}
     <div class="sl">Peso corporal</div>
     <button class="bwc" onclick="openBwSheet()">
       <div class="bwn">${bw?bw.w:'—'}<small>${bw?fd(bw.d):'Sin registros aún'}</small></div>
@@ -748,6 +807,93 @@ function rSta(){
     <button class="btns" onclick="importData()">Importar backup</button>`;
 }
 
+// ── SLEEP PAGE ───────────────────────────────────────
+function rSue(){
+  const p=document.getElementById('pg-sue');
+  const t=tod();
+  const today=S.sleep?.[t];
+  const TGT=8;
+  const slpCls=h=>h>=7?'':h>=6?'mid':'low';
+
+  const h=today?.h;
+  const pct=h?Math.min(100,Math.round(h/TGT*100)):0;
+  const cls=slpCls(h||0);
+
+  const hero=`<button class="slp-hero" onclick="openSueSheet()">
+    <div class="slp-n" style="${cls==='low'?'color:var(--warn)':cls==='mid'?'color:var(--dim)':''}">${h!=null?h:'—'}<small>${h!=null?'horas':'Sin registro hoy'}</small></div>
+    <div class="slp-info">
+      <div class="slp-lbl">Anoche · objetivo 8h</div>
+      ${h!=null?`<div class="slp-tbar"><div class="slp-tf ${cls}" style="width:${pct}%"></div></div>`:''}
+    </div>
+    <div class="bwl">+ Registrar</div>
+  </button>`;
+
+  const dates=Object.keys(S.sleep||{}).sort().reverse().slice(0,14);
+  const avg=dates.length?(dates.reduce((a,d)=>a+(S.sleep[d].h||0),0)/dates.length).toFixed(1):null;
+
+  const histRows=dates.map(d=>{
+    const dh=S.sleep[d].h;
+    const dp=Math.min(100,Math.round(dh/TGT*100));
+    const dc=slpCls(dh);
+    return`<div class="slp-hist">
+      <div class="slp-hd">${fd(d)}</div>
+      <div class="slp-hbar"><div class="slp-hf ${dc}" style="width:${dp}%"></div></div>
+      <div class="slp-hv ${dc}">${dh}h</div>
+    </div>`;
+  }).join('');
+
+  p.innerHTML=`<div class="ph"><div class="kicker">Descanso</div>
+    <div class="big">Sueño<span>Registro</span></div></div>
+    ${hero}
+    ${avg?`<div class="sc" style="margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;padding:14px 16px">
+      <div><div class="ssh">Promedio (${dates.length} noches)</div>
+        <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--muted)">Objetivo: 7-9h por noche</div></div>
+      <div class="sv">${avg}<small>h</small></div>
+    </div>`:''}
+    <div class="sl">Historial</div>
+    ${histRows||'<div class="empty"><b>Sin registros aún</b>Tocá el card de arriba para empezar.</div>'}`;
+}
+
+// ── SLEEP SHEET ──────────────────────────────────────
+let curSueH=7.5;
+
+function openSueSheet(){
+  const t=tod();
+  const ex=S.sleep?.[t];
+  if(ex!=null){curSueH=ex.h;}
+  else{
+    const dates=Object.keys(S.sleep||{}).sort().reverse();
+    curSueH=dates.length?S.sleep[dates[0]].h:7.5;
+  }
+  updSue();
+  openSheet('sh-sue');
+}
+
+function stepSue(d){
+  curSueH=Math.max(3,Math.min(13,+(curSueH+d).toFixed(1)));
+  updSue();
+}
+
+function updSue(){
+  const el=document.getElementById('sue-val');
+  if(el)el.innerHTML=`${curSueH}<small>horas</small>`;
+}
+
+function saveSue(){
+  const t=tod();
+  if(!S.sleep)S.sleep={};
+  S.sleep[t]={h:curSueH};
+  save();closeSheet();
+  setTimeout(()=>{rSue();rHoy();},50);
+}
+
+function delSue(){
+  const t=tod();
+  if(S.sleep?.[t])delete S.sleep[t];
+  save();closeSheet();
+  setTimeout(()=>{rSue();rHoy();},50);
+}
+
 // ── EXERCISE CUSTOMIZER ──────────────────────────────
 let curChExId=null,curChDayId=null,curChGroup=0,curChPick=null;
 
@@ -834,7 +980,7 @@ function nav(pg){
   document.querySelectorAll('.nb').forEach(x=>x.classList.remove('on'));
   document.getElementById(`pg-${pg}`).classList.add('on');
   document.querySelector(`.nb[data-pg="${pg}"]`).classList.add('on');
-  ({hoy:rHoy,gym:rGym,com:rCom,sta:rSta})[pg]();
+  ({hoy:rHoy,gym:rGym,com:rCom,sta:rSta,sue:rSue})[pg]();
 }
 
 function goGym(id){S.day=id;nav('gym')}
@@ -984,7 +1130,7 @@ function saveBw(){
 document.querySelectorAll('.nb').forEach(b=>b.addEventListener('click',()=>nav(b.dataset.pg)));
 ['in-p','in-c','in-f'].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('input',updK)});
 
-try{load();({hoy:rHoy,gym:rGym,com:rCom,sta:rSta})[S.pg]();}
+try{load();({hoy:rHoy,gym:rGym,com:rCom,sta:rSta,sue:rSue})[S.pg||'hoy']();}
 catch(e){
   document.getElementById('pg-hoy').style.cssText='display:block;padding:20px';
   document.getElementById('pg-hoy').innerHTML=`<div style="font-family:monospace;color:var(--acc);font-size:13px;background:var(--panel);padding:16px;border:1px solid var(--line)"><b style="color:var(--warn)">Error:</b><br>${e.message}<br><br><small>${e.stack}</small></div>`;
