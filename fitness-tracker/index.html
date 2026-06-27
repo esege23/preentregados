@@ -457,6 +457,22 @@ const DAYS=[
     {id:"e5_5",num:"05",n:"Hiperextensiones (lumbar)",s:3,r1:12,r2:15,rest:"60 s"},
     {id:"e5_6",num:"06",n:"Gemelo sentado",s:4,r1:15,r2:15,rest:"45 s"},
   ]},
+  {id:6,l:"D6",n:"Día 6",f:"Personalizado · editar con ✏",ex:[
+    {id:"e6_1",num:"01",n:"Ejercicio 1",s:4,r1:8,r2:12,rest:"2 min"},
+    {id:"e6_2",num:"02",n:"Ejercicio 2",s:3,r1:8,r2:12,rest:"90 s"},
+    {id:"e6_3",num:"03",n:"Ejercicio 3",s:3,r1:10,r2:12,rest:"90 s"},
+    {id:"e6_4",num:"04",n:"Ejercicio 4",s:3,r1:12,r2:15,rest:"75 s"},
+    {id:"e6_5",num:"05",n:"Ejercicio 5",s:3,r1:12,r2:15,rest:"60 s"},
+    {id:"e6_6",num:"06",n:"Ejercicio 6",s:3,r1:12,r2:15,rest:"60 s"},
+  ]},
+  {id:7,l:"D7",n:"Día 7",f:"Personalizado · editar con ✏",ex:[
+    {id:"e7_1",num:"01",n:"Ejercicio 1",s:4,r1:8,r2:12,rest:"2 min"},
+    {id:"e7_2",num:"02",n:"Ejercicio 2",s:3,r1:8,r2:12,rest:"90 s"},
+    {id:"e7_3",num:"03",n:"Ejercicio 3",s:3,r1:10,r2:12,rest:"90 s"},
+    {id:"e7_4",num:"04",n:"Ejercicio 4",s:3,r1:12,r2:15,rest:"75 s"},
+    {id:"e7_5",num:"05",n:"Ejercicio 5",s:3,r1:12,r2:15,rest:"60 s"},
+    {id:"e7_6",num:"06",n:"Ejercicio 6",s:3,r1:12,r2:15,rest:"60 s"},
+  ]},
 ];
 
 const MEALS=[
@@ -469,15 +485,14 @@ const MEALS=[
 
 const TGT={kcal:3000,P:160,C:400,F:80};
 
-const PH=[null,
-  {l:"Aprender cargas",rpe:"RPE 7 · 3 RIR",c:"var(--dim)"},
-  {l:"Aprender cargas",rpe:"RPE 7 · 3 RIR",c:"var(--dim)"},
-  {l:"Doble progresión",rpe:"RPE 8 · 2 RIR",c:"var(--acc)"},
-  {l:"Doble progresión",rpe:"RPE 8 · 2 RIR",c:"var(--acc)"},
-  {l:"Intensificar",rpe:"RPE 9 · 1 RIR",c:"var(--warn)"},
-  {l:"Intensificar",rpe:"RPE 9 · 1 RIR",c:"var(--warn)"},
-  {l:"Deload",rpe:"RPE 6 · 4 RIR",c:"var(--warn)"},
-];
+function getPhase(week,nw){
+  const n=nw||7;
+  if(week>=n)return{l:'Deload',rpe:'RPE 6 · 4 RIR',c:'var(--warn)'};
+  const p=week/n;
+  if(p<=0.30)return{l:'Aprender cargas',rpe:'RPE 7 · 3 RIR',c:'var(--dim)'};
+  if(p<=0.70)return{l:'Doble progresión',rpe:'RPE 8 · 2 RIR',c:'var(--acc)'};
+  return{l:'Intensificar',rpe:'RPE 9 · 1 RIR',c:'var(--warn)'};
+}
 
 // ── EXERCISE CATALOG ─────────────────────────────────
 const EX_LIST=[
@@ -523,7 +538,7 @@ const EX_LIST=[
 ];
 
 // ── STATE ────────────────────────────────────────────
-let S={pg:'hoy',day:1,week:1,workouts:{},nutrition:{},bw:[],customEx:{},sleep:{}};
+let S={pg:'hoy',day:1,week:1,numDays:5,numWeeks:7,workouts:{},nutrition:{},bw:[],customEx:{},sleep:{}};
 function load(){
   try{
     const x=localStorage.getItem('ft3');
@@ -654,11 +669,11 @@ function macroGrid(nut){
 function rHoy(){
   const p=document.getElementById('pg-hoy');
   const wd=new Date().getDay();
-  const dm={1:1,2:2,3:3,4:4,5:5};
-  const gd=dm[wd]?DAYS.find(d=>d.id===dm[wd]):null;
+  const dm={1:1,2:2,3:3,4:4,5:5,6:6,0:7};
+  const gd=dm[wd]&&dm[wd]<=(S.numDays||5)?DAYS.find(d=>d.id===dm[wd]):null;
   const nut=nutDay();
   const bw=latBw();
-  const ph=PH[Math.min(S.week,7)];
+  const ph=getPhase(S.week,S.numWeeks);
   const dias=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
   const meses=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
   const now=new Date();
@@ -694,10 +709,13 @@ function rHoy(){
 
 function rGym(){
   const p=document.getElementById('pg-gym');
+  const numDays=S.numDays||5;
+  const visibleDays=DAYS.filter(d=>d.id<=numDays);
+  if(!visibleDays.find(d=>d.id===S.day))S.day=visibleDays[0].id;
   const day=DAYS.find(d=>d.id===S.day);
-  const ph=PH[Math.min(S.week,7)];
+  const ph=getPhase(S.week,S.numWeeks);
 
-  const tabs=DAYS.map(d=>`<button class="dt ${d.id===S.day?'on':''}" onclick="selDay(${d.id})">
+  const tabs=visibleDays.map(d=>`<button class="dt ${d.id===S.day?'on':''}" onclick="selDay(${d.id})">
     <b>${d.l}</b>${d.n}</button>`).join('');
 
   const rows=day.ex.map(ex=>{
@@ -733,10 +751,29 @@ function rGym(){
     <div style="font-family:'Anton',sans-serif;font-size:26px;text-transform:uppercase;letter-spacing:.3px;font-weight:400">${day.n}</div>
     <div style="font-size:13px;color:var(--muted);margin-bottom:10px">${day.f}</div>
     ${rows}${cardio}
-    <div class="sl" style="margin-top:20px">Semana del ciclo</div>
+    <div class="sl" style="margin-top:20px">Configuración del plan</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px">
+      <div>
+        <div class="wkp" style="margin-bottom:6px">Días por semana</div>
+        <div class="wkctrl">
+          <button class="wkbtn" onclick="chgDays(-1)">−</button>
+          <div class="wkn">${S.numDays||5}</div>
+          <button class="wkbtn" onclick="chgDays(1)">+</button>
+        </div>
+      </div>
+      <div>
+        <div class="wkp" style="margin-bottom:6px">Semanas del ciclo</div>
+        <div class="wkctrl">
+          <button class="wkbtn" onclick="chgNumWeeks(-1)">−</button>
+          <div class="wkn">${S.numWeeks||7}</div>
+          <button class="wkbtn" onclick="chgNumWeeks(1)">+</button>
+        </div>
+      </div>
+    </div>
+    <div class="sl" style="margin-top:14px">Semana actual</div>
     <div class="wkctrl">
       <button class="wkbtn" onclick="chgWeek(-1)">−</button>
-      <div><div class="wkn">${S.week}<small style="font-family:'Space Mono',monospace;font-size:12px;color:var(--muted);font-weight:400">/7</small></div>
+      <div><div class="wkn">${S.week}<small style="font-family:'Space Mono',monospace;font-size:12px;color:var(--muted);font-weight:400">/${S.numWeeks||7}</small></div>
         <div class="wkp">${ph?.l}</div></div>
       <button class="wkbtn" onclick="chgWeek(1)">+</button>
     </div></div>`;
@@ -773,12 +810,14 @@ function rCom(){
 function rSta(){
   const p=document.getElementById('pg-sta');
   const all=Object.keys(S.workouts);
-  const ph=PH[Math.min(S.week,7)];
+  const ph=getPhase(S.week,S.numWeeks);
+  const nw=S.numWeeks||7;
+  const nd=S.numDays||5;
   const wkCnt=all.filter(k=>k.startsWith(`W${S.week}D`)).length;
 
-  const cbar=Array.from({length:7},(_,i)=>{
+  const cbar=Array.from({length:nw},(_,i)=>{
     const w=i+1;
-    let c=w<S.week?'d':w===S.week?(w===7?'dl':'c'):w===7?'dl':'';
+    let c=w<S.week?'d':w===S.week?(w===nw?'dl':'c'):w===nw?'dl':'';
     return`<div class="cw ${c}"></div>`;
   }).join('');
 
@@ -812,13 +851,13 @@ function rSta(){
     <div class="big">Stats<span>Progreso</span></div></div>
     <div class="sl">Ciclo 7 semanas</div>
     <div class="sc"><div class="ssh">Semana actual</div>
-      <div class="sv">${S.week}<small>/ 7</small></div>
+      <div class="sv">${S.week}<small>/ ${nw}</small></div>
       <div class="cbar">${cbar}</div>
       <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--dim);margin-top:6px">${ph?.l} · ${ph?.rpe}</div>
     </div>
     <div class="sg">
       <div class="sc"><div class="ssh">Sesiones totales</div><div class="sv">${all.length}</div></div>
-      <div class="sc"><div class="ssh">Esta semana</div><div class="sv">${wkCnt}<small>/ 5</small></div></div>
+      <div class="sc"><div class="ssh">Esta semana</div><div class="sv">${wkCnt}<small>/ ${nd}</small></div></div>
     </div>
     ${prRows?`<div class="sl">PRs · Movimientos principales</div>${prRows}`:''}
     <div class="sl">Peso corporal</div>
@@ -1020,7 +1059,17 @@ function nav(pg){
 
 function goGym(id){S.day=id;nav('gym')}
 function selDay(id){S.day=id;save();rGym()}
-function chgWeek(d){S.week=Math.max(1,Math.min(7,S.week+d));save();rGym()}
+function chgWeek(d){S.week=Math.max(1,Math.min(S.numWeeks||7,S.week+d));save();rGym()}
+function chgDays(d){
+  S.numDays=Math.max(1,Math.min(7,(S.numDays||5)+d));
+  if(S.day>S.numDays)S.day=S.numDays;
+  save();rGym();
+}
+function chgNumWeeks(d){
+  S.numWeeks=Math.max(1,Math.min(16,(S.numWeeks||7)+d));
+  if(S.week>S.numWeeks)S.week=S.numWeeks;
+  save();rGym();
+}
 
 // ── SHEET ────────────────────────────────────────────
 let curSheet=null,curExId=null,curDayId=null,curMealId=null;
