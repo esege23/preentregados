@@ -530,6 +530,7 @@ function load(){
     if(!x)return;
     const parsed=JSON.parse(x);
     S={...S,...parsed};
+    idbSave();
     // migrate old date-keyed workouts (YYYY-MM-DD) → week+day keys (W1D1)
     const old=Object.keys(S.workouts).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k));
     if(old.length){
@@ -560,6 +561,31 @@ function load(){
 function save(){
   try{localStorage.setItem('ft3',JSON.stringify(S));}
   catch(e){console.error('ft3 save failed:',e);}
+  idbSave();
+}
+
+// ── INDEXEDDB BACKUP ─────────────────────────────────
+function idbOpen(){
+  return new Promise((res,rej)=>{
+    const req=indexedDB.open('ft3db',1);
+    req.onupgradeneeded=e=>e.target.result.createObjectStore('state');
+    req.onsuccess=e=>res(e.target.result);
+    req.onerror=()=>rej(req.error);
+  });
+}
+function idbSave(){
+  idbOpen().then(db=>{
+    const tx=db.transaction('state','readwrite');
+    tx.objectStore('state').put(JSON.stringify(S),'main');
+  }).catch(()=>{});
+}
+function idbLoad(){
+  return idbOpen().then(db=>new Promise(res=>{
+    const tx=db.transaction('state','readonly');
+    const req=tx.objectStore('state').get('main');
+    req.onsuccess=()=>{try{res(req.result?JSON.parse(req.result):null);}catch(e){res(null);}};
+    req.onerror=()=>res(null);
+  })).catch(()=>null);
 }
 
 // ── HELPERS ──────────────────────────────────────────
@@ -799,10 +825,19 @@ function rSta(){
     ${bwRows||'<div class="empty"><b>Sin registros aún</b>Andá a Hoy y registrá tu peso.</div>'}
     ${histRows?`<div class="sl">Historial</div>${histRows}`:''}
     <div class="sl">Backup</div>
-    <div style="background:var(--panel);border:1px solid var(--line);padding:14px 16px;margin-bottom:6px;font-size:12px;color:var(--muted);border-left:3px solid var(--dim)">
-      Safari puede borrar datos si no usás el app por varios días.<br>
-      <b style="color:var(--ink)">Agregalo a la pantalla de inicio</b> para storage persistente.
-    </div>
+    ${(()=>{
+      const isPWA=window.navigator.standalone===true||window.matchMedia('(display-mode: standalone)').matches;
+      if(isPWA)return`<div style="background:rgba(205,255,58,.08);border:1px solid var(--dim);padding:14px 16px;margin-bottom:6px;border-left:3px solid var(--acc)">
+        <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--acc);margin-bottom:4px">✓ App instalada</div>
+        <div style="font-size:12px;color:var(--muted)">Los datos están protegidos del borrado automático de Safari.</div>
+      </div>`;
+      return`<div style="background:rgba(255,122,61,.08);border:1px solid var(--warn);padding:14px 16px;margin-bottom:6px;border-left:3px solid var(--warn)">
+        <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--warn);margin-bottom:6px">⚠ Riesgo de pérdida de datos</div>
+        <div style="font-size:13px;color:var(--ink);margin-bottom:8px">Safari puede borrar todos tus datos si no abrís el app por 7 días.</div>
+        <div style="font-size:12px;color:var(--muted)">Para protegerlos de forma permanente, instalá el app en tu pantalla de inicio:</div>
+        <div style="font-family:'Space Mono',monospace;font-size:11px;color:var(--ink);margin-top:8px;line-height:1.8">1. Tocá el botón <b style="color:var(--acc)">Compartir</b> (□↑) en Safari<br>2. Elegí <b style="color:var(--acc)">Agregar a pantalla de inicio</b><br>3. Tocá <b style="color:var(--acc)">Agregar</b></div>
+      </div>`;
+    })()}
     <button class="btnp" onclick="exportData()" style="margin-bottom:6px">Exportar datos (backup)</button>
     <button class="btns" onclick="importData()">Importar backup</button>`;
 }
@@ -1130,10 +1165,21 @@ function saveBw(){
 document.querySelectorAll('.nb').forEach(b=>b.addEventListener('click',()=>nav(b.dataset.pg)));
 ['in-p','in-c','in-f'].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('input',updK)});
 
+const _lsEmpty=!localStorage.getItem('ft3');
 try{load();({hoy:rHoy,gym:rGym,com:rCom,sta:rSta,sue:rSue})[S.pg||'hoy']();}
 catch(e){
   document.getElementById('pg-hoy').style.cssText='display:block;padding:20px';
   document.getElementById('pg-hoy').innerHTML=`<div style="font-family:monospace;color:var(--acc);font-size:13px;background:var(--panel);padding:16px;border:1px solid var(--line)"><b style="color:var(--warn)">Error:</b><br>${e.message}<br><br><small>${e.stack}</small></div>`;
+}
+
+if(_lsEmpty){
+  idbLoad().then(data=>{
+    if(data&&Object.keys(data.workouts||{}).length){
+      S={...S,...data};
+      try{localStorage.setItem('ft3',JSON.stringify(S));}catch(er){}
+      ({hoy:rHoy,gym:rGym,com:rCom,sta:rSta,sue:rSue})[S.pg||'hoy']();
+    }
+  });
 }
 
 if('serviceWorker' in navigator){
