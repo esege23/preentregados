@@ -1255,9 +1255,9 @@ function debounceFoodSearch(q){
 function searchFood(q){
   const el=document.getElementById('food-results');
   if(!el)return;
-  const url=`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&json=1&page_size=8&fields=product_name,nutriments,serving_size&lc=es&search_simple=1&action=process`;
-  fetch(url)
-    .then(r=>r.json())
+  const url=`https://world.openfoodfacts.org/api/v2/search?search_terms=${encodeURIComponent(q)}&fields=product_name,nutriments&page_size=8&sort_by=unique_scans_n`;
+  fetch(url,{headers:{'User-Agent':'FitnessTracker/1.0'}})
+    .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
     .then(data=>{
       const prods=(data.products||[]).filter(p=>p.product_name&&p.nutriments);
       if(!prods.length){el.innerHTML=`<div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);padding:6px 0">Sin resultados para "${q}"</div>`;return;}
