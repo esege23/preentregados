@@ -1453,7 +1453,7 @@ document.querySelectorAll('.nb').forEach(b=>b.addEventListener('click',()=>nav(b
 ['in-p','in-c','in-f'].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('input',updK)});
 
 const _lsEmpty=!localStorage.getItem('ft3');
-try{load();const _pg=S.pg==='sue'?'hoy':S.pg||'hoy';S.pg=_pg;applyTheme();({hoy:rHoy,gym:rGym,com:rCom,sta:rSta})[_pg]?.();}
+try{load();const _pg=S.pg==='sue'?'hoy':S.pg||'hoy';S.pg=_pg;applyTheme();nav(_pg);}
 catch(e){
   document.getElementById('pg-hoy').style.cssText='display:block;padding:20px';
   document.getElementById('pg-hoy').innerHTML=`<div style="font-family:monospace;color:var(--acc);font-size:13px;background:var(--panel);padding:16px;border:1px solid var(--line)"><b style="color:var(--warn)">Error:</b><br>${e.message}<br><br><small>${e.stack}</small></div>`;
@@ -1464,7 +1464,7 @@ if(_lsEmpty){
     if(data&&Object.keys(data.workouts||{}).length){
       S={...S,...data};
       try{localStorage.setItem('ft3',JSON.stringify(S));}catch(er){}
-      ({hoy:rHoy,gym:rGym,com:rCom,sta:rSta})[S.pg||'hoy']?.();
+      nav(S.pg||'hoy');
     }
   });
 }
