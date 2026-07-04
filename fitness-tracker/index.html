@@ -412,6 +412,25 @@ textarea.fi{resize:none;height:68px;font-size:13.5px;font-weight:400}
   <div class="sh-body" id="sh-chex-body"></div>
 </div>
 
+<div class="sheet" id="sh-tgt">
+  <div class="sh-handle"></div>
+  <div class="sh-hd">
+    <div class="sh-title">Objetivos nutricionales</div>
+    <div class="sh-sub">Personalizá tus metas diarias de macros</div>
+  </div>
+  <div class="sh-body">
+    <div class="fg"><label class="fl">Calorías objetivo (kcal)</label><input class="fi" type="number" id="in-tkcal" min="1000" max="6000" step="50" placeholder="3000"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
+      <div><label class="fl">Proteína (g)</label><input class="fi" type="number" id="in-tp" min="50" max="400" placeholder="160"></div>
+      <div><label class="fl">Carbos (g)</label><input class="fi" type="number" id="in-tc" min="50" max="800" placeholder="400"></div>
+      <div><label class="fl">Grasas (g)</label><input class="fi" type="number" id="in-tf" min="20" max="300" placeholder="80"></div>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:18px">Calculá tus macros según tu peso, objetivo y nivel de actividad. Un valor de partida común: 2g de proteína por kg de peso corporal.</p>
+    <button class="btnp" onclick="saveTgt()">Guardar objetivos</button>
+    <button class="btns" onclick="closeSheet()">Cancelar</button>
+  </div>
+</div>
+
 <script>
 // ── DATOS ────────────────────────────────────────────
 const DAYS=[
@@ -538,7 +557,7 @@ const EX_LIST=[
 ];
 
 // ── STATE ────────────────────────────────────────────
-let S={pg:'hoy',day:1,week:1,numDays:5,numWeeks:7,workouts:{},nutrition:{},bw:[],customEx:{},sleep:{}};
+let S={pg:'hoy',day:1,week:1,numDays:5,numWeeks:7,workouts:{},nutrition:{},bw:[],customEx:{},sleep:{},targets:{kcal:3000,P:160,C:400,F:80}};
 function load(){
   try{
     const x=localStorage.getItem('ft3');
@@ -628,6 +647,29 @@ function lastSess(exId,dayId){
   return null;
 }
 
+function lastSessions(exId,dayId,count){
+  const d=dayId||S.day;
+  const results=[];
+  for(let w=S.week-1;w>=1&&results.length<count;w--){
+    const sets=S.workouts[`W${w}D${d}`]?.exercises?.[exId];
+    if(sets&&sets.length)results.push({sets,week:w});
+  }
+  return results;
+}
+
+function upd1RM(){
+  const el=document.getElementById('sh-ex-1rm');
+  if(!el)return;
+  let best=0,i=0;
+  while(document.getElementById(`w${i}`)){
+    const w=parseFloat(document.getElementById(`w${i}`).value)||0;
+    const r=parseInt(document.getElementById(`r${i}`).value)||0;
+    if(w>0&&r>=1&&r<=15){const est=w/(1.0278-0.0278*r);if(est>best)best=est;}
+    i++;
+  }
+  el.textContent=best>0?`1RM estimado · ${best.toFixed(1)} kg`:'';
+}
+
 function doneSets(exId){
   return(S.workouts[curKey()]?.exercises?.[exId]||[]).filter(s=>s.done).length;
 }
@@ -648,18 +690,19 @@ function prW(exId){
 function latBw(){return S.bw.length?S.bw[S.bw.length-1]:null}
 
 function macroGrid(nut){
-  const kp=pc(nut.k,TGT.kcal),pp=pc(nut.P,TGT.P),cp=pc(nut.C,TGT.C),fp=pc(nut.F,TGT.F);
+  const t=S.targets||TGT;
+  const kp=pc(nut.k,t.kcal),pp=pc(nut.P,t.P),cp=pc(nut.C,t.C),fp=pc(nut.F,t.F);
   return`<div class="mg">
-    <div class="mc f2"><div class="ml">Calorías <b>${nut.k}/${TGT.kcal} kcal</b></div>
+    <div class="mc f2"><div class="ml">Calorías <b>${nut.k}/${t.kcal} kcal</b></div>
       <div class="bt"><div class="bf ${kp>100?'hi':''}" style="width:${kp}%"></div></div>
       <div class="mn">${nut.k}<small>kcal</small></div></div>
-    <div class="mc"><div class="ml">Proteína <b>${nut.P}g</b></div>
+    <div class="mc"><div class="ml">Proteína <b>${nut.P}/${t.P}g</b></div>
       <div class="bt"><div class="bf ${pp>100?'hi':''}" style="width:${pp}%"></div></div>
       <div class="mn">${nut.P}<small>g</small></div></div>
-    <div class="mc"><div class="ml">Carbos <b>${nut.C}g</b></div>
+    <div class="mc"><div class="ml">Carbos <b>${nut.C}/${t.C}g</b></div>
       <div class="bt"><div class="bf ${cp>100?'hi':''}" style="width:${cp}%"></div></div>
       <div class="mn">${nut.C}<small>g</small></div></div>
-    <div class="mc"><div class="ml">Grasas <b>${nut.F}g</b></div>
+    <div class="mc"><div class="ml">Grasas <b>${nut.F}/${t.F}g</b></div>
       <div class="bt"><div class="bf ${fp>100?'hi':''}" style="width:${fp}%"></div></div>
       <div class="mn">${nut.F}<small>g</small></div></div>
   </div>`;
@@ -751,7 +794,9 @@ function rGym(){
     <div style="font-family:'Anton',sans-serif;font-size:26px;text-transform:uppercase;letter-spacing:.3px;font-weight:400">${day.n}</div>
     <div style="font-size:13px;color:var(--muted);margin-bottom:10px">${day.f}</div>
     ${rows}${cardio}
-    <div class="sl" style="margin-top:20px">Configuración del plan</div>
+    <div class="sl" style="margin-top:20px">Nota de la sesión</div>
+    <textarea class="fi note-gym-ta" style="height:68px;resize:none;margin-bottom:4px" placeholder="Cómo te sentiste, incidencias, carga real, RPE subjetivo..."></textarea>
+    <div class="sl" style="margin-top:16px">Configuración del plan</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px">
       <div>
         <div class="wkp" style="margin-bottom:6px">Días por semana</div>
@@ -777,6 +822,8 @@ function rGym(){
         <div class="wkp">${ph?.l}</div></div>
       <button class="wkbtn" onclick="chgWeek(1)">+</button>
     </div></div>`;
+  const nta=p.querySelector('.note-gym-ta');
+  if(nta){nta.value=S.workouts[curKey()]?.note||'';nta.oninput=()=>saveNote(nta.value);}
 }
 
 function rCom(){
@@ -798,11 +845,15 @@ function rCom(){
     </div>`;
   }).join('');
 
+  const t=S.targets||TGT;
   p.innerHTML=`<div class="ph"><div class="kicker">Registro del día</div>
     <div class="big">Comida<span>Nutrición</span></div></div>
     ${macroGrid(nut)}
-    <div style="font-size:12px;color:var(--muted);margin-bottom:2px;border-left:2px solid var(--dim);padding-left:10px">
-      Objetivo: <b style="color:var(--ink)">150-165g proteína</b> · 30-40g por comida
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div style="font-size:12px;color:var(--muted);border-left:2px solid var(--dim);padding-left:10px">
+        Meta: <b style="color:var(--ink)">${t.kcal} kcal · ${t.P}g P · ${t.C}g C · ${t.F}g G</b>
+      </div>
+      <button class="btns" style="width:auto;padding:6px 12px;font-size:9px" onclick="openTgtSheet()">Editar</button>
     </div>
     <div class="sl">Comidas del día</div>${mrows}`;
 }
@@ -1015,6 +1066,26 @@ function resetChEx(){
   setTimeout(rGym,50);
 }
 
+// ── NUTRITION TARGETS ────────────────────────────────
+function openTgtSheet(){
+  const t=S.targets||TGT;
+  document.getElementById('in-tkcal').value=t.kcal;
+  document.getElementById('in-tp').value=t.P;
+  document.getElementById('in-tc').value=t.C;
+  document.getElementById('in-tf').value=t.F;
+  openSheet('sh-tgt');
+}
+function saveTgt(){
+  S.targets={
+    kcal:parseInt(document.getElementById('in-tkcal').value)||TGT.kcal,
+    P:parseInt(document.getElementById('in-tp').value)||TGT.P,
+    C:parseInt(document.getElementById('in-tc').value)||TGT.C,
+    F:parseInt(document.getElementById('in-tf').value)||TGT.F,
+  };
+  save();closeSheet();
+  setTimeout(()=>{rCom();rHoy();},50);
+}
+
 // ── BACKUP ───────────────────────────────────────────
 function exportData(){
   const json=JSON.stringify(S,null,2);
@@ -1059,6 +1130,11 @@ function nav(pg){
 
 function goGym(id){S.day=id;nav('gym')}
 function selDay(id){S.day=id;save();rGym()}
+function saveNote(val){
+  const k=curKey();
+  if(!S.workouts[k])S.workouts[k]={dayId:S.day,week:S.week,date:tod(),exercises:{}};
+  S.workouts[k].note=val;save();
+}
 function chgWeek(d){S.week=Math.max(1,Math.min(S.numWeeks||7,S.week+d));save();rGym()}
 function chgDays(d){
   S.numDays=Math.max(1,Math.min(7,(S.numDays||5)+d));
@@ -1093,7 +1169,8 @@ function openExSheet(exId,dayId){
   curExId=exId;curDayId=dayId;
   const day=DAYS.find(d=>d.id===dayId);
   const ex=day.ex.find(e=>e.id===exId);
-  const ls=lastSess(exId,dayId);
+  const hist=lastSessions(exId,dayId,3);
+  const ls=hist[0]||null;
   const saved=(S.workouts[curKey()]?.exercises?.[exId])||[];
 
   const sets=saved.length>=ex.s
@@ -1106,11 +1183,12 @@ function openExSheet(exId,dayId){
 
   document.getElementById('sh-ex-name').textContent=S.customEx?.[exId]?.n||ex.n;
   document.getElementById('sh-ex-plan').textContent=`${ex.s} series × ${rs(ex)} reps · desc ${ex.rest}`;
-  document.getElementById('sh-ex-last').innerHTML=ls
-    ?`Sem ${ls.week} (anterior): <b>${ls.sets.map(s=>`${s.w||'?'}kg×${s.r||'?'}`).join(' · ')}</b>`
+  document.getElementById('sh-ex-last').innerHTML=hist.length
+    ?hist.map(h=>`<div style="margin-bottom:2px"><span style="font-family:'Space Mono',monospace;font-size:9px;color:var(--dim)">Sem ${h.week}:</span> <b>${h.sets.map(s=>`${s.w||'?'}kg×${s.r||'?'}`).join(' · ')}</b></div>`).join('')
     :'<span style="color:var(--muted)">Primera vez — establecé tu peso base</span>';
 
   document.getElementById('sh-ex-body').innerHTML=`
+    <div id="sh-ex-1rm" style="font-family:'Space Mono',monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--acc);min-height:18px;padding-bottom:8px;border-bottom:1px solid var(--line);margin-bottom:10px"></div>
     <div class="sh"><div></div>
       <div class="scl">Peso (kg)</div>
       <div class="scl">Reps</div>
@@ -1118,14 +1196,15 @@ function openExSheet(exId,dayId){
     </div>
     ${sets.map((s,i)=>`<div class="sr">
       <div class="sn">S${i+1}</div>
-      <input class="si" type="number" id="w${i}" min="0" max="500" step="0.5" value="${s.w||''}" placeholder="${ls?.sets[i]?.w||'?'}">
-      <input class="si" type="number" id="r${i}" min="0" max="100" value="${s.r||''}" placeholder="${rs(ex)}">
+      <input class="si" type="number" id="w${i}" min="0" max="500" step="0.5" value="${s.w||''}" placeholder="${ls?.sets[i]?.w||'?'}" oninput="upd1RM()">
+      <input class="si" type="number" id="r${i}" min="0" max="100" value="${s.r||''}" placeholder="${rs(ex)}" oninput="upd1RM()">
       <button class="sc2 ${s.done?'on':''}" id="c${i}" onclick="togSet(${i})">${s.done?'✓':''}</button>
     </div>`).join('')}
     <button class="btnp" onclick="saveEx(${ex.s})" style="margin-top:6px">Guardar ejercicio</button>
     <div style="height:16px"></div>`;
 
   openSheet('sh-ex');
+  upd1RM();
 }
 
 function togSet(i){
