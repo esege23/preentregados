@@ -431,6 +431,34 @@ textarea.fi{resize:none;height:68px;font-size:13.5px;font-weight:400}
   </div>
 </div>
 
+<div class="sheet" id="sh-plates">
+  <div class="sh-handle"></div>
+  <div class="sh-hd">
+    <div class="sh-title">Calculadora de discos</div>
+    <div class="sh-sub">Configurá la barra y el peso total a cargar</div>
+  </div>
+  <div class="sh-body">
+    <div class="fg"><label class="fl">Peso total (kg)</label>
+      <input class="fi" type="number" id="pl-total" min="0" max="500" step="1.25" placeholder="100" oninput="updPlates()"></div>
+    <div style="margin-bottom:16px">
+      <div class="fl" style="margin-bottom:8px">Barra</div>
+      <div style="display:flex;gap:12px">
+        <label style="display:flex;align-items:center;gap:6px;font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);cursor:pointer">
+          <input type="radio" name="pl-bar" value="20" checked onchange="updPlates()"> Olímpica 20 kg
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);cursor:pointer">
+          <input type="radio" name="pl-bar" value="15" onchange="updPlates()"> Corta 15 kg
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);cursor:pointer">
+          <input type="radio" name="pl-bar" value="10" onchange="updPlates()"> Mini 10 kg
+        </label>
+      </div>
+    </div>
+    <div id="pl-result"></div>
+    <button class="btns" onclick="closeSheet()" style="margin-top:8px">Cerrar</button>
+  </div>
+</div>
+
 <script>
 // ── DATOS ────────────────────────────────────────────
 const DAYS=[
@@ -821,7 +849,9 @@ function rGym(){
       <div><div class="wkn">${S.week}<small style="font-family:'Space Mono',monospace;font-size:12px;color:var(--muted);font-weight:400">/${S.numWeeks||7}</small></div>
         <div class="wkp">${ph?.l}</div></div>
       <button class="wkbtn" onclick="chgWeek(1)">+</button>
-    </div></div>`;
+    </div>
+    <button class="btns" onclick="openPlatesSheet()" style="margin-top:14px">Calculadora de discos</button>
+    </div>`;
   const nta=p.querySelector('.note-gym-ta');
   if(nta){nta.value=S.workouts[curKey()]?.note||'';nta.oninput=()=>saveNote(nta.value);}
 }
@@ -872,9 +902,30 @@ function rSta(){
     return`<div class="cw ${c}"></div>`;
   }).join('');
 
-  const prRows=DAYS.map(d=>d.ex[0]).map(ex=>{
+  // weekly volume per day/muscle group
+  const volItems=DAYS.filter(d=>d.id<=nd).map(d=>{
+    const log=S.workouts[`W${S.week}D${d.id}`];
+    const done=Object.values(log?.exercises||{}).reduce((a,ss)=>a+ss.filter(s=>s.done).length,0);
+    const tot=d.ex.reduce((a,e)=>a+e.s,0);
+    const pct=Math.min(100,Math.round(done/tot*100));
+    const bc=done>=tot?'#cdff3a':done>0?'#8fa83f':'#2b2f1f';
+    return`<div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
+        <span style="font-size:13px;font-weight:600;color:var(--ink)">${d.n}</span>
+        <span style="font-family:'Space Mono',monospace;font-size:10px;color:${done>=tot?'var(--acc)':'var(--muted)'}">${done}/${tot} series</span>
+      </div>
+      <div class="bt"><div style="height:100%;border-radius:3px;background:${bc};width:${pct}%;transition:width .3s"></div></div>
+    </div>`;
+  }).join('');
+
+  // progress chart
+  const visEx=DAYS.filter(d=>d.id<=nd).flatMap(d=>d.ex);
+  const exOpts=visEx.map(e=>`<option value="${e.id}">${S.customEx?.[e.id]?.n||e.n}</option>`).join('');
+  const fex=visEx[0]?.id||'';
+
+  const prRows=DAYS.filter(d=>d.id<=nd).map(d=>d.ex[0]).map(ex=>{
     const pr=prW(ex.id);
-    return pr?`<div class="prr"><div class="prn">${ex.n}</div><div class="prv">${pr}kg<small>PR</small></div></div>`:''
+    return pr?`<div class="prr"><div class="prn">${S.customEx?.[ex.id]?.n||ex.n}</div><div class="prv">${pr}kg<small>PR</small></div></div>`:''
   }).filter(Boolean).join('');
 
   const bwRows=S.bw.slice(-10).reverse().map((e,i,arr)=>{
@@ -900,7 +951,7 @@ function rSta(){
 
   p.innerHTML=`<div class="ph"><div class="kicker">Tu evolución</div>
     <div class="big">Stats<span>Progreso</span></div></div>
-    <div class="sl">Ciclo 7 semanas</div>
+    <div class="sl">Ciclo ${nw} semanas</div>
     <div class="sc"><div class="ssh">Semana actual</div>
       <div class="sv">${S.week}<small>/ ${nw}</small></div>
       <div class="cbar">${cbar}</div>
@@ -910,7 +961,14 @@ function rSta(){
       <div class="sc"><div class="ssh">Sesiones totales</div><div class="sv">${all.length}</div></div>
       <div class="sc"><div class="ssh">Esta semana</div><div class="sv">${wkCnt}<small>/ ${nd}</small></div></div>
     </div>
+    <div class="sl">Volumen esta semana · series completadas</div>
+    <div class="sc">${volItems||'<div class="empty" style="padding:14px 0"><b>Sin datos aún</b>Completá ejercicios para ver el volumen.</div>'}</div>
     ${prRows?`<div class="sl">PRs · Movimientos principales</div>${prRows}`:''}
+    ${fex?`<div class="sl">Progresión · peso máximo por semana</div>
+    <div class="sc" style="padding:14px 16px 12px">
+      <select id="chart-sel" onchange="selChart(this.value)" style="background:var(--panel2);border:1px solid var(--line);color:var(--ink);font-family:'Space Mono',monospace;font-size:9.5px;padding:8px 10px;width:100%;margin-bottom:10px;-webkit-appearance:none;appearance:none">${exOpts}</select>
+      <div id="chart-area">${mkChart(fex)}</div>
+    </div>`:''}
     <div class="sl">Peso corporal</div>
     ${bwRows||'<div class="empty"><b>Sin registros aún</b>Andá a Hoy y registrá tu peso.</div>'}
     ${histRows?`<div class="sl">Historial</div>${histRows}`:''}
@@ -1084,6 +1142,68 @@ function saveTgt(){
   };
   save();closeSheet();
   setTimeout(()=>{rCom();rHoy();},50);
+}
+
+// ── PROGRESS CHART ───────────────────────────────────
+function mkChart(exId){
+  const data=[];
+  for(let w=1;w<=Math.max(S.week,2);w++){
+    let mx=0;
+    DAYS.forEach(d=>{
+      const ss=S.workouts[`W${w}D${d.id}`]?.exercises?.[exId];
+      if(ss)ss.forEach(s=>{if((+s.w||0)>mx)mx=+s.w;});
+    });
+    if(mx>0)data.push({w,v:mx});
+  }
+  if(data.length<2)return`<div style="padding:14px 0;text-align:center;font-family:'Space Mono',monospace;font-size:10px;color:#9a9d86">Registrá al menos 2 semanas con este ejercicio.</div>`;
+  const W=320,H=90,pd=10;
+  const ys=data.map(d=>d.v),minV=Math.min(...ys),maxV=Math.max(...ys),rng=maxV-minV||1;
+  const px=i=>(pd+(i/(data.length-1))*(W-pd*2)).toFixed(1);
+  const py=v=>(H-pd-8-((v-minV)/rng)*(H-pd*2-10)).toFixed(1);
+  const pts=data.map((d,i)=>`${px(i)},${py(d.v)}`).join(' ');
+  const area=`${px(0)},${H} ${pts} ${px(data.length-1)},${H}`;
+  return`<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" style="display:block;overflow:visible">
+    <defs><linearGradient id="chg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#cdff3a" stop-opacity=".18"/>
+      <stop offset="100%" stop-color="#cdff3a" stop-opacity="0"/>
+    </linearGradient></defs>
+    <polygon points="${area}" fill="url(#chg)"/>
+    <polyline points="${pts}" fill="none" stroke="#cdff3a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    ${data.map((d,i)=>{const last=i===data.length-1,cx=px(i),cy=py(d.v);
+    return`<circle cx="${cx}" cy="${cy}" r="${last?4:2.5}" fill="${last?'#cdff3a':'#8fa83f'}"/>
+      <text x="${cx}" y="${(+cy-8).toFixed(1)}" text-anchor="middle" font-size="9" fill="${last?'#cdff3a':'#9a9d86'}" font-family="monospace">${last||i===0?d.v+'kg':''}</text>
+      <text x="${cx}" y="${H-1}" text-anchor="middle" font-size="8" fill="#9a9d86" font-family="monospace">S${d.w}</text>`;}).join('')}
+  </svg>`;
+}
+function selChart(exId){const el=document.getElementById('chart-area');if(el)el.innerHTML=mkChart(exId);}
+
+// ── PLATE CALCULATOR ─────────────────────────────────
+function openPlatesSheet(){
+  document.getElementById('pl-total').value='';
+  document.getElementById('pl-result').innerHTML='';
+  openSheet('sh-plates');
+}
+function updPlates(){
+  const total=parseFloat(document.getElementById('pl-total')?.value)||0;
+  const bar=parseFloat(document.querySelector('[name="pl-bar"]:checked')?.value)||20;
+  const el=document.getElementById('pl-result');
+  if(!el)return;
+  if(total<=0){el.innerHTML='';return;}
+  if(total<=bar){el.innerHTML=`<p style="color:#ff7a3d;font-size:12px;font-family:'Space Mono',monospace">El peso debe ser mayor que la barra (${bar} kg).</p>`;return;}
+  const perSide=(total-bar)/2;
+  const sizes=[25,20,15,10,5,2.5,1.25];
+  const plates=[];let rem=perSide;
+  for(const sz of sizes){const cnt=Math.floor(rem/sz+0.001);if(cnt>0){plates.push({sz,cnt});rem-=sz*cnt;}}
+  const ok=rem<0.1;
+  const clr=sz=>sz>=20?'#cdff3a':sz>=10?'#8fa83f':sz>=5?'#9a9d86':'#5a5c47';
+  el.innerHTML=`<div style="font-family:'Space Mono',monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:#9a9d86;margin-bottom:14px">
+    Por lado: <b style="color:#cdff3a;font-size:22px;font-family:'Anton',sans-serif;font-weight:400;letter-spacing:.5px">${perSide} kg</b>${ok?'':' <span style="color:#ff7a3d;font-size:9px">aprox.</span>'}
+  </div>
+  ${plates.map(({sz,cnt})=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:9px">
+    <span style="font-family:'Space Mono',monospace;font-size:11px;color:#f3f4ea;min-width:40px">${sz} kg</span>
+    <span style="font-family:'Space Mono',monospace;font-size:10px;color:#9a9d86">×${cnt}</span>
+    <div style="display:flex;gap:3px">${Array.from({length:cnt},()=>`<div style="width:${Math.max(6,sz*1.5)}px;height:22px;background:${clr(sz)}"></div>`).join('')}</div>
+  </div>`).join('')}`;
 }
 
 // ── BACKUP ───────────────────────────────────────────
