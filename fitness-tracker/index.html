@@ -11,11 +11,18 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <title>Fit Tracker</title>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script>
+try{const _s=JSON.parse(localStorage.getItem('ft3')||'{}');if(_s.theme==='light')document.documentElement.dataset.theme='light';}catch(e){}
+</script>
 <style>
 :root{
   --bg:#0c0d0a;--panel:#15170f;--panel2:#1c1f14;--line:#2b2f1f;
   --ink:#f3f4ea;--muted:#9a9d86;--acc:#cdff3a;--dim:#8fa83f;--warn:#ff7a3d;
   --nav:64px;
+}
+[data-theme="light"]{
+  --bg:#f2f3ed;--panel:#ffffff;--panel2:#e8ebe0;--line:#cacdb8;
+  --ink:#1a1c14;--muted:#6a6d5a;--acc:#6ea800;--dim:#4d7a00;--warn:#cc4000;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;background:var(--bg);color:var(--ink);font-family:'Barlow',sans-serif}
@@ -313,9 +320,41 @@ textarea.fi{resize:none;height:68px;font-size:13.5px;font-weight:400}
 .btns:active{color:var(--ink)}
 .empty{text-align:center;padding:28px 12px;color:var(--muted);font-size:14px}
 .empty b{color:var(--ink);display:block;margin-bottom:6px;font-size:16px}
+
+/* ── SPLASH ── */
+#splash{position:fixed;inset:0;background:var(--bg);z-index:200;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  transition:opacity .45s ease;gap:0}
+#splash.hide{opacity:0;pointer-events:none}
+.sp-logo{font-family:'Anton',sans-serif;font-size:88px;color:var(--acc);
+  text-transform:uppercase;letter-spacing:4px;line-height:1;
+  animation:spIn .5s cubic-bezier(.22,1,.36,1) both}
+.sp-sub{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.5em;
+  text-transform:uppercase;color:var(--muted);margin-top:6px;
+  animation:spIn .5s cubic-bezier(.22,1,.36,1) .1s both}
+.sp-line{width:48px;height:3px;background:var(--acc);margin:14px auto 0;
+  animation:spLine .5s cubic-bezier(.22,1,.36,1) .2s both}
+@keyframes spIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes spLine{from{width:0;opacity:0}to{width:48px;opacity:1}}
+
+/* ── THEME TOGGLE ── */
+#theme-btn{position:fixed;top:14px;right:14px;z-index:15;
+  background:var(--panel);border:1px solid var(--line);color:var(--muted);
+  width:34px;height:34px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:17px;-webkit-appearance:none;appearance:none;border-radius:0}
+#theme-btn:active{background:var(--line)}
 </style>
 </head>
 <body>
+
+<div id="splash">
+  <div class="sp-logo">Fit</div>
+  <div class="sp-line"></div>
+  <div class="sp-sub">Tracker</div>
+</div>
+
+<button id="theme-btn" onclick="toggleTheme()">☀</button>
+
 
 <div id="pg-hoy" class="page on"></div>
 <div id="pg-gym" class="page"></div>
@@ -1383,12 +1422,38 @@ function saveBw(){
   setTimeout(()=>{rHoy();rSta()},50);
 }
 
+// ── THEME ────────────────────────────────────────────
+function toggleTheme(){
+  const light=document.documentElement.dataset.theme==='light';
+  document.documentElement.dataset.theme=light?'dark':'light';
+  document.querySelector('meta[name="theme-color"]').content=light?'#0c0d0a':'#f2f3ed';
+  document.getElementById('theme-btn').textContent=light?'☀':'☾';
+  S.theme=light?'dark':'light';
+  save();
+}
+function applyTheme(){
+  const light=S.theme==='light';
+  document.documentElement.dataset.theme=light?'light':'dark';
+  document.querySelector('meta[name="theme-color"]').content=light?'#f2f3ed':'#0c0d0a';
+  document.getElementById('theme-btn').textContent=light?'☾':'☀';
+}
+
+// ── SPLASH ───────────────────────────────────────────
+(function(){
+  const sp=document.getElementById('splash');
+  if(!sp)return;
+  setTimeout(()=>{
+    sp.classList.add('hide');
+    setTimeout(()=>sp.remove(),450);
+  },1300);
+})();
+
 // ── INIT ─────────────────────────────────────────────
 document.querySelectorAll('.nb').forEach(b=>b.addEventListener('click',()=>nav(b.dataset.pg)));
 ['in-p','in-c','in-f'].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('input',updK)});
 
 const _lsEmpty=!localStorage.getItem('ft3');
-try{load();const _pg=S.pg==='sue'?'hoy':S.pg||'hoy';S.pg=_pg;({hoy:rHoy,gym:rGym,com:rCom,sta:rSta})[_pg]?.();}
+try{load();const _pg=S.pg==='sue'?'hoy':S.pg||'hoy';S.pg=_pg;applyTheme();({hoy:rHoy,gym:rGym,com:rCom,sta:rSta})[_pg]?.();}
 catch(e){
   document.getElementById('pg-hoy').style.cssText='display:block;padding:20px';
   document.getElementById('pg-hoy').innerHTML=`<div style="font-family:monospace;color:var(--acc);font-size:13px;background:var(--panel);padding:16px;border:1px solid var(--line)"><b style="color:var(--warn)">Error:</b><br>${e.message}<br><br><small>${e.stack}</small></div>`;
