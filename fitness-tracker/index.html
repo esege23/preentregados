@@ -321,8 +321,6 @@ textarea.fi{resize:none;height:68px;font-size:13.5px;font-weight:400}
 <div id="pg-gym" class="page"></div>
 <div id="pg-com" class="page"></div>
 <div id="pg-sta" class="page"></div>
-<div id="pg-sue" class="page"></div>
-
 <nav class="nav">
   <button class="nb on" data-pg="hoy">
     <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Hoy
@@ -335,9 +333,6 @@ textarea.fi{resize:none;height:68px;font-size:13.5px;font-weight:400}
   </button>
   <button class="nb" data-pg="sta">
     <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>Stats
-  </button>
-  <button class="nb" data-pg="sue">
-    <svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>Sueño
   </button>
 </nav>
 
@@ -360,6 +355,12 @@ textarea.fi{resize:none;height:68px;font-size:13.5px;font-weight:400}
     <div class="sh-sub" id="sh-meal-sub"></div>
   </div>
   <div class="sh-body">
+    <div style="display:flex;gap:8px;margin-bottom:6px">
+      <input class="fi" type="search" id="food-q" placeholder="Buscar alimento (ej: arroz, pollo...)" autocomplete="off" oninput="debounceFoodSearch(this.value)" style="margin-bottom:0;flex:1">
+      <button class="btns" onclick="startScan()" style="width:auto;padding:0 12px;font-size:18px;margin:0" title="Escanear código de barras">📷</button>
+    </div>
+    <div id="food-results" style="margin-bottom:10px"></div>
+    <div style="font-size:10px;color:var(--muted);margin-bottom:12px;font-family:'Space Mono',monospace">Datos: Open Food Facts · por 100 g</div>
     <div class="mt3">
       <div><label class="fl">Proteína (g)</label><input class="si" type="number" id="in-p" min="0" placeholder="0"></div>
       <div><label class="fl">Carbos (g)</label><input class="si" type="number" id="in-c" min="0" placeholder="0"></div>
@@ -385,23 +386,6 @@ textarea.fi{resize:none;height:68px;font-size:13.5px;font-weight:400}
   </div>
 </div>
 
-<div class="sheet" id="sh-sue">
-  <div class="sh-handle"></div>
-  <div class="sh-hd">
-    <div class="sh-title">Sueño de anoche</div>
-    <div class="sh-sub">¿Cuántas horas dormiste?</div>
-  </div>
-  <div class="sh-body">
-    <div class="slp-step">
-      <button class="slp-pm" onclick="stepSue(-0.5)">−</button>
-      <div class="slp-val" id="sue-val">7.5<small>horas</small></div>
-      <button class="slp-pm" onclick="stepSue(0.5)">+</button>
-    </div>
-    <p style="font-size:13px;color:var(--muted);text-align:center;margin-bottom:20px">Objetivo: 7-9 horas · ideal 8h por noche</p>
-    <button class="btnp" onclick="saveSue()">Guardar</button>
-    <button class="btns" onclick="delSue()">Borrar registro de hoy</button>
-  </div>
-</div>
 
 <div class="sheet" id="sh-chex">
   <div class="sh-handle"></div>
@@ -585,7 +569,7 @@ const EX_LIST=[
 ];
 
 // ── STATE ────────────────────────────────────────────
-let S={pg:'hoy',day:1,week:1,numDays:5,numWeeks:7,workouts:{},nutrition:{},bw:[],customEx:{},sleep:{},targets:{kcal:3000,P:160,C:400,F:80}};
+let S={pg:'hoy',day:1,week:1,numDays:5,numWeeks:7,workouts:{},nutrition:{},bw:[],customEx:{},targets:{kcal:3000,P:160,C:400,F:80}};
 function load(){
   try{
     const x=localStorage.getItem('ft3');
@@ -765,12 +749,6 @@ function rHoy(){
     ${gymCard}
     <div class="sl">Nutrición de hoy</div>
     ${macroGrid(nut)}
-    <div class="sl">Sueño · anoche</div>
-    ${(()=>{const sl=S.sleep?.[tod()];const c=sl?(sl.h>=7?'var(--acc)':sl.h>=6?'var(--dim)':'var(--warn)'):'var(--muted)';
-    return`<button class="bwc" onclick="openSueSheet()">
-      <div class="bwn" style="color:${c}">${sl?sl.h:'—'}<small>${sl?'horas de sueño':'Sin registro hoy'}</small></div>
-      <div class="bwl">+ Registrar</div>
-    </button>`})()}
     <div class="sl">Peso corporal</div>
     <button class="bwc" onclick="openBwSheet()">
       <div class="bwn">${bw?bw.w:'—'}<small>${bw?fd(bw.d):'Sin registros aún'}</small></div>
@@ -991,92 +969,6 @@ function rSta(){
 }
 
 // ── SLEEP PAGE ───────────────────────────────────────
-function rSue(){
-  const p=document.getElementById('pg-sue');
-  const t=tod();
-  const today=S.sleep?.[t];
-  const TGT=8;
-  const slpCls=h=>h>=7?'':h>=6?'mid':'low';
-
-  const h=today?.h;
-  const pct=h?Math.min(100,Math.round(h/TGT*100)):0;
-  const cls=slpCls(h||0);
-
-  const hero=`<button class="slp-hero" onclick="openSueSheet()">
-    <div class="slp-n" style="${cls==='low'?'color:var(--warn)':cls==='mid'?'color:var(--dim)':''}">${h!=null?h:'—'}<small>${h!=null?'horas':'Sin registro hoy'}</small></div>
-    <div class="slp-info">
-      <div class="slp-lbl">Anoche · objetivo 8h</div>
-      ${h!=null?`<div class="slp-tbar"><div class="slp-tf ${cls}" style="width:${pct}%"></div></div>`:''}
-    </div>
-    <div class="bwl">+ Registrar</div>
-  </button>`;
-
-  const dates=Object.keys(S.sleep||{}).sort().reverse().slice(0,14);
-  const avg=dates.length?(dates.reduce((a,d)=>a+(S.sleep[d].h||0),0)/dates.length).toFixed(1):null;
-
-  const histRows=dates.map(d=>{
-    const dh=S.sleep[d].h;
-    const dp=Math.min(100,Math.round(dh/TGT*100));
-    const dc=slpCls(dh);
-    return`<div class="slp-hist">
-      <div class="slp-hd">${fd(d)}</div>
-      <div class="slp-hbar"><div class="slp-hf ${dc}" style="width:${dp}%"></div></div>
-      <div class="slp-hv ${dc}">${dh}h</div>
-    </div>`;
-  }).join('');
-
-  p.innerHTML=`<div class="ph"><div class="kicker">Descanso</div>
-    <div class="big">Sueño<span>Registro</span></div></div>
-    ${hero}
-    ${avg?`<div class="sc" style="margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;padding:14px 16px">
-      <div><div class="ssh">Promedio (${dates.length} noches)</div>
-        <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--muted)">Objetivo: 7-9h por noche</div></div>
-      <div class="sv">${avg}<small>h</small></div>
-    </div>`:''}
-    <div class="sl">Historial</div>
-    ${histRows||'<div class="empty"><b>Sin registros aún</b>Tocá el card de arriba para empezar.</div>'}`;
-}
-
-// ── SLEEP SHEET ──────────────────────────────────────
-let curSueH=7.5;
-
-function openSueSheet(){
-  const t=tod();
-  const ex=S.sleep?.[t];
-  if(ex!=null){curSueH=ex.h;}
-  else{
-    const dates=Object.keys(S.sleep||{}).sort().reverse();
-    curSueH=dates.length?S.sleep[dates[0]].h:7.5;
-  }
-  updSue();
-  openSheet('sh-sue');
-}
-
-function stepSue(d){
-  curSueH=Math.max(3,Math.min(13,+(curSueH+d).toFixed(1)));
-  updSue();
-}
-
-function updSue(){
-  const el=document.getElementById('sue-val');
-  if(el)el.innerHTML=`${curSueH}<small>horas</small>`;
-}
-
-function saveSue(){
-  const t=tod();
-  if(!S.sleep)S.sleep={};
-  S.sleep[t]={h:curSueH};
-  save();closeSheet();
-  setTimeout(()=>{rSue();rHoy();},50);
-}
-
-function delSue(){
-  const t=tod();
-  if(S.sleep?.[t])delete S.sleep[t];
-  save();closeSheet();
-  setTimeout(()=>{rSue();rHoy();},50);
-}
-
 // ── EXERCISE CUSTOMIZER ──────────────────────────────
 let curChExId=null,curChDayId=null,curChGroup=0,curChPick=null;
 
@@ -1245,7 +1137,7 @@ function nav(pg){
   document.querySelectorAll('.nb').forEach(x=>x.classList.remove('on'));
   document.getElementById(`pg-${pg}`).classList.add('on');
   document.querySelector(`.nb[data-pg="${pg}"]`).classList.add('on');
-  ({hoy:rHoy,gym:rGym,com:rCom,sta:rSta,sue:rSue})[pg]();
+  ({hoy:rHoy,gym:rGym,com:rCom,sta:rSta})[pg]?.();
 }
 
 function goGym(id){S.day=id;nav('gym')}
@@ -1350,6 +1242,86 @@ function saveEx(ns){
 }
 
 // ── MEAL SHEET ───────────────────────────────────────
+// ── OPEN FOOD FACTS ──────────────────────────────────
+let _foodTimer=null;
+function debounceFoodSearch(q){
+  clearTimeout(_foodTimer);
+  const el=document.getElementById('food-results');
+  if(!q||q.length<2){if(el)el.innerHTML='';return;}
+  if(el)el.innerHTML=`<div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);padding:6px 0">Buscando...</div>`;
+  _foodTimer=setTimeout(()=>searchFood(q),500);
+}
+
+function searchFood(q){
+  const el=document.getElementById('food-results');
+  if(!el)return;
+  const url=`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&json=1&page_size=8&fields=product_name,nutriments,serving_size&lc=es&search_simple=1&action=process`;
+  fetch(url)
+    .then(r=>r.json())
+    .then(data=>{
+      const prods=(data.products||[]).filter(p=>p.product_name&&p.nutriments);
+      if(!prods.length){el.innerHTML=`<div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);padding:6px 0">Sin resultados para "${q}"</div>`;return;}
+      el.innerHTML=prods.map((p,i)=>{
+        const n=p.nutriments;
+        const pro=Math.round(n.proteins_100g||0);
+        const car=Math.round(n.carbohydrates_100g||0);
+        const fat=Math.round(n.fat_100g||0);
+        const kcl=Math.round(n['energy-kcal_100g']||n.energy_100g/4.184||0);
+        const name=(p.product_name||'').substring(0,50);
+        return`<button onclick="fillFromFood(${pro},${car},${fat},'${name.replace(/'/g,"\\'")}',event)" style="display:block;width:100%;text-align:left;background:var(--panel);border:1px solid var(--line);padding:9px 12px;margin-bottom:6px;font-family:'Space Mono',monospace;font-size:10px;color:var(--ink);cursor:pointer;border-radius:4px">
+          <div style="font-size:11px;color:var(--ink);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name}</div>
+          <div style="color:var(--muted)">P:${pro}g · C:${car}g · G:${fat}g · ${kcl}kcal <span style="color:var(--dim)">(por 100g)</span></div>
+        </button>`;
+      }).join('');
+    })
+    .catch(()=>{if(el)el.innerHTML=`<div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--warn);padding:6px 0">Error al conectar con Open Food Facts</div>`;});
+}
+
+function fillFromFood(pro,car,fat,name,evt){
+  document.getElementById('in-p').value=pro;
+  document.getElementById('in-c').value=car;
+  document.getElementById('in-f').value=fat;
+  const notesEl=document.getElementById('in-notes');
+  if(notesEl&&!notesEl.value)notesEl.value=name;
+  updK();
+  const el=document.getElementById('food-results');
+  if(el)el.innerHTML=`<div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--acc);padding:6px 0">✓ ${name} (por 100g)</div>`;
+  document.getElementById('food-q').value='';
+}
+
+function startScan(){
+  if('BarcodeDetector' in window){
+    const input=document.createElement('input');
+    input.type='file';input.accept='image/*';input.capture='environment';
+    input.onchange=async e=>{
+      const file=e.target.files[0];if(!file)return;
+      const img=await createImageBitmap(file);
+      const bd=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e']});
+      const codes=await bd.detect(img);
+      if(!codes.length){alert('No se detectó código de barras. Intentá de nuevo con mejor luz.');return;}
+      fetchByBarcode(codes[0].rawValue);
+    };
+    input.click();
+  } else {
+    const code=prompt('Ingresá el código de barras manualmente:');
+    if(code&&code.trim())fetchByBarcode(code.trim());
+  }
+}
+
+function fetchByBarcode(code){
+  const el=document.getElementById('food-results');
+  if(el)el.innerHTML=`<div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);padding:6px 0">Buscando código ${code}...</div>`;
+  fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json?fields=product_name,nutriments`)
+    .then(r=>r.json())
+    .then(data=>{
+      if(data.status!==1||!data.product?.nutriments){if(el)el.innerHTML=`<div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--warn);padding:6px 0">Producto no encontrado (${code})</div>`;return;}
+      const p=data.product;
+      const n=p.nutriments;
+      fillFromFood(Math.round(n.proteins_100g||0),Math.round(n.carbohydrates_100g||0),Math.round(n.fat_100g||0),(p.product_name||code).substring(0,50),null);
+    })
+    .catch(()=>{if(el)el.innerHTML=`<div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--warn);padding:6px 0">Error al conectar</div>`;});
+}
+
 function openMealSheet(mealId){
   curMealId=mealId;
   const m=MEALS.find(x=>x.id===mealId);
@@ -1361,6 +1333,8 @@ function openMealSheet(mealId){
   document.getElementById('in-c').value=ex.C||'';
   document.getElementById('in-f').value=ex.F||'';
   document.getElementById('in-notes').value=ex.notes||'';
+  document.getElementById('food-q').value='';
+  document.getElementById('food-results').innerHTML='';
   updK();
   openSheet('sh-meal');
 }
@@ -1414,7 +1388,7 @@ document.querySelectorAll('.nb').forEach(b=>b.addEventListener('click',()=>nav(b
 ['in-p','in-c','in-f'].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('input',updK)});
 
 const _lsEmpty=!localStorage.getItem('ft3');
-try{load();({hoy:rHoy,gym:rGym,com:rCom,sta:rSta,sue:rSue})[S.pg||'hoy']();}
+try{load();const _pg=S.pg==='sue'?'hoy':S.pg||'hoy';S.pg=_pg;({hoy:rHoy,gym:rGym,com:rCom,sta:rSta})[_pg]?.();}
 catch(e){
   document.getElementById('pg-hoy').style.cssText='display:block;padding:20px';
   document.getElementById('pg-hoy').innerHTML=`<div style="font-family:monospace;color:var(--acc);font-size:13px;background:var(--panel);padding:16px;border:1px solid var(--line)"><b style="color:var(--warn)">Error:</b><br>${e.message}<br><br><small>${e.stack}</small></div>`;
@@ -1425,7 +1399,7 @@ if(_lsEmpty){
     if(data&&Object.keys(data.workouts||{}).length){
       S={...S,...data};
       try{localStorage.setItem('ft3',JSON.stringify(S));}catch(er){}
-      ({hoy:rHoy,gym:rGym,com:rCom,sta:rSta,sue:rSue})[S.pg||'hoy']();
+      ({hoy:rHoy,gym:rGym,com:rCom,sta:rSta})[S.pg||'hoy']?.();
     }
   });
 }
