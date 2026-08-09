@@ -321,6 +321,10 @@ textarea.fi{resize:none;height:68px;font-size:13.5px;font-weight:400}
 .empty{text-align:center;padding:28px 12px;color:var(--muted);font-size:14px}
 .empty b{color:var(--ink);display:block;margin-bottom:6px;font-size:16px}
 
+/* ── EDIT ROW ── */
+.edit-row{display:flex;align-items:center;margin-bottom:6px}
+.edit-row .fi{border-radius:0;height:44px;font-size:14px;padding:8px 12px}
+
 /* ── SPLASH ── */
 #splash{position:fixed;inset:0;background:var(--bg);z-index:200;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -482,25 +486,13 @@ textarea.fi{resize:none;height:68px;font-size:13.5px;font-weight:400}
   </div>
 </div>
 
-<div class="sheet" id="sh-addex">
+<div class="sheet" id="sh-editday">
   <div class="sh-handle"></div>
   <div class="sh-hd">
-    <div class="sh-title">Agregar ejercicio</div>
-    <div class="sh-sub">Se agrega al día activo de la rutina</div>
+    <div class="sh-title" id="sh-editday-title">Editar rutina</div>
+    <div class="sh-sub">Modificá, eliminá o agregá ejercicios</div>
   </div>
-  <div class="sh-body">
-    <div class="fg"><label class="fl">Nombre del ejercicio</label>
-      <input class="fi" type="text" id="ae-name" placeholder="Ej: Curl con barra"></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
-      <div><label class="fl">Series</label><input class="fi" type="number" id="ae-sets" value="3" min="1" max="10"></div>
-      <div><label class="fl">Rep mín</label><input class="fi" type="number" id="ae-r1" value="8" min="1" max="30"></div>
-      <div><label class="fl">Rep máx</label><input class="fi" type="number" id="ae-r2" value="12" min="1" max="30"></div>
-    </div>
-    <div class="fg"><label class="fl">Descanso</label>
-      <input class="fi" type="text" id="ae-rest" placeholder="90 s"></div>
-    <button class="btnp" onclick="saveAddEx()">Agregar a la rutina</button>
-    <button class="btns" onclick="closeSheet()">Cancelar</button>
-  </div>
+  <div class="sh-body" id="sh-editday-body"></div>
 </div>
 
 <script>
@@ -829,34 +821,29 @@ function rGym(){
 
   const baseEx=(day.ex||[]).filter(ex=>!(S.removedEx||{})[ex.id]);
   const addedEx=(S.addedEx||{})[S.day]||[];
-  const allEx=[...baseEx,...addedEx];
 
-  function mkExRow(ex,isAdded){
+  const rows=[...baseEx,...addedEx].map((ex,i)=>{
     const dc=doneSets(ex.id),tot=ex.s;
     const done=dc>=tot&&dc>0;
     const part=dc>0&&!done;
     const ls=lastSess(ex.id,day.id);
-    const lastTxt=ls?`S${ls.week}: ${ls.sets[0]?.w||'?'}kg`:(isAdded?'nuevo':'nuevo');
+    const lastTxt=ls?`S${ls.week}: ${ls.sets[0]?.w||'?'}kg`:'nuevo';
     const cn=S.customEx?.[ex.id]?.n||ex.n;
     const isCustom=!!S.customEx?.[ex.id];
+    const isAdded=!!ex.custom;
     const stTxt=done?`<div class="ex-st ok">✓ Completado · desc ${ex.rest}</div>`
       :part?`<div class="ex-st pt">${dc}/${tot} series · desc ${ex.rest}</div>`
       :`<div class="ex-st">desc ${ex.rest}</div>`;
-    const editBtn=isAdded
-      ?`<button class="ex-ed" onclick="delEx('${ex.id}',true)" style="color:var(--warn)">×</button>`
-      :`<button class="ex-ed" onclick="openChExSheet('${ex.id}',${day.id})">✏</button>
-       <button class="ex-ed" onclick="delEx('${ex.id}',false)" style="color:var(--warn);border-left:none">×</button>`;
     return`<div class="ex-wrap ${done?'done':part?'part':''}">
       <button class="ex" onclick="openExSheet('${ex.id}',${day.id})">
-        <div class="ex-num">${ex.num}</div>
-        <div><div class="ex-name">${cn}${ex.note&&!isCustom&&!isAdded?`<small>${ex.note}</small>`:''}</div>${stTxt}</div>
+        <div class="ex-num">${String(i+1).padStart(2,'0')}</div>
+        <div><div class="ex-name">${cn}${ex.note&&!isCustom?`<small>${ex.note}</small>`:''}</div>${stTxt}</div>
         <div class="ex-r"><div class="ex-sets">${tot}×${rs(ex)}</div>
           <div class="ex-last">${lastTxt}</div></div>
       </button>
-      ${editBtn}
+      <button class="ex-ed" onclick="${isAdded?`openEditDaySheet()`:` openChExSheet('${ex.id}',${day.id})`}">✏</button>
     </div>`;
-  }
-  const rows=[...baseEx.map(ex=>mkExRow(ex,false)),...addedEx.map(ex=>mkExRow(ex,true))].join('');
+  }).join('');
 
   const cardio=day.cardio?`<div class="crd"><div class="crd-t">Cardio · Zona 2</div><p>${day.cardio}</p></div>`:'';
 
@@ -869,8 +856,8 @@ function rGym(){
     <div style="font-family:'Anton',sans-serif;font-size:26px;text-transform:uppercase;letter-spacing:.3px;font-weight:400">${day.n}</div>
     <div style="font-size:13px;color:var(--muted);margin-bottom:10px">${day.f}</div>
     ${rows}
-    <button onclick="openAddExSheet()" style="display:flex;align-items:center;gap:8px;width:100%;background:var(--panel);border:1px solid var(--line);border-top:none;padding:12px 14px;color:var(--dim);font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;-webkit-appearance:none">
-      <span style="font-size:18px;line-height:1;color:var(--acc)">+</span> Agregar ejercicio
+    <button onclick="openEditDaySheet()" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:var(--panel);border:1px solid var(--line);border-top:none;padding:11px 14px;color:var(--dim);font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;-webkit-appearance:none">
+      ✏ Editar rutina
     </button>
     ${cardio}
     <div class="sl" style="margin-top:20px">Nota de la sesión</div>
@@ -1142,39 +1129,101 @@ function mkChart(exId){
 }
 function selChart(exId){const el=document.getElementById('chart-area');if(el)el.innerHTML=mkChart(exId);}
 
-// ── ADD / REMOVE EXERCISE ────────────────────────────
-function openAddExSheet(){
-  document.getElementById('ae-name').value='';
-  document.getElementById('ae-sets').value=3;
-  document.getElementById('ae-r1').value=8;
-  document.getElementById('ae-r2').value=12;
-  document.getElementById('ae-rest').value='90 s';
-  openSheet('sh-addex');
+// ── EDIT DAY ROUTINE ─────────────────────────────────
+function openEditDaySheet(){
+  const day=DAYS.find(d=>d.id===S.day);
+  document.getElementById('sh-editday-title').textContent=`Editar ${day.l} · ${day.n}`;
+  renderEditDayBody();
+  openSheet('sh-editday');
 }
-function saveAddEx(){
-  const n=document.getElementById('ae-name').value.trim();
-  if(!n)return;
-  const s=parseInt(document.getElementById('ae-sets').value)||3;
-  const r1=parseInt(document.getElementById('ae-r1').value)||8;
-  const r2=parseInt(document.getElementById('ae-r2').value)||12;
-  const rest=document.getElementById('ae-rest').value.trim()||'90 s';
-  if(!S.addedEx)S.addedEx={};
-  if(!S.addedEx[S.day])S.addedEx[S.day]=[];
-  const total=((DAYS.find(d=>d.id===S.day)||{}).ex||[]).length+S.addedEx[S.day].length+1;
-  const id=`cx_${S.day}_${Date.now()}`;
-  S.addedEx[S.day].push({id,n,s,r1,r2,rest,num:String(total).padStart(2,'0'),custom:true});
-  save();closeSheet();
-  setTimeout(rGym,50);
+
+function renderEditDayBody(){
+  const day=DAYS.find(d=>d.id===S.day);
+  const baseEx=(day.ex||[]).filter(ex=>!(S.removedEx||{})[ex.id]);
+  const addedEx=(S.addedEx||{})[S.day]||[];
+  const body=document.getElementById('sh-editday-body');
+  if(!body)return;
+
+  const baseRows=baseEx.map(ex=>{
+    const cn=S.customEx?.[ex.id]?.n||ex.n;
+    return`<div class="edit-row" data-id="${ex.id}" data-type="base">
+      <input class="fi edit-name" style="flex:1;margin:0" value="${cn.replace(/"/g,'&quot;')}" placeholder="${ex.n}">
+      <button onclick="editDelEx('${ex.id}','base')" style="flex-shrink:0;width:40px;height:44px;background:none;border:1px solid var(--line);border-left:none;color:var(--warn);font-size:18px;cursor:pointer;-webkit-appearance:none">×</button>
+    </div>`;
+  }).join('');
+
+  const addedRows=addedEx.map(ex=>`<div class="edit-row" data-id="${ex.id}" data-type="added">
+    <input class="fi edit-name" style="flex:1;margin:0" value="${(ex.n||'').replace(/"/g,'&quot;')}" placeholder="Nombre">
+    <button onclick="editDelEx('${ex.id}','added')" style="flex-shrink:0;width:40px;height:44px;background:none;border:1px solid var(--line);border-left:none;color:var(--warn);font-size:18px;cursor:pointer;-webkit-appearance:none">×</button>
+  </div>`).join('');
+
+  body.innerHTML=`
+    <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px">Ejercicios activos</div>
+    <div id="edit-rows-list" style="margin-bottom:16px">${baseRows}${addedRows}
+      ${(!baseRows&&!addedRows)?'<div style="font-size:12px;color:var(--muted);padding:10px 0">Sin ejercicios. Agregá uno abajo.</div>':''}</div>
+    <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px">Agregar ejercicio</div>
+    <div class="fi" style="padding:12px;margin-bottom:12px">
+      <input id="new-ex-name" class="fi" style="margin-bottom:8px" placeholder="Nombre del ejercicio" type="text">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">
+        <div><div class="fl">Series</div><input class="fi" type="number" id="new-ex-sets" value="3" min="1" max="10"></div>
+        <div><div class="fl">Rep mín</div><input class="fi" type="number" id="new-ex-r1" value="8" min="1"></div>
+        <div><div class="fl">Rep máx</div><input class="fi" type="number" id="new-ex-r2" value="12" min="1"></div>
+      </div>
+      <input id="new-ex-rest" class="fi" placeholder="Descanso (ej: 90 s)" type="text" style="margin-bottom:0">
+    </div>
+    <button class="btns" onclick="editAddEx()" style="margin-bottom:14px">+ Agregar a la rutina</button>
+    <button class="btnp" onclick="saveEditDay()">Guardar cambios</button>
+    <button class="btns" onclick="closeSheet()">Cancelar</button>
+  `;
 }
-function delEx(exId,isAdded){
-  if(isAdded){
-    if(!S.addedEx||!S.addedEx[S.day])return;
-    S.addedEx[S.day]=S.addedEx[S.day].filter(e=>e.id!==exId);
-  } else {
+
+function editDelEx(exId, type){
+  if(type==='base'){
     if(!S.removedEx)S.removedEx={};
     S.removedEx[exId]=true;
+  } else {
+    if(!S.addedEx||!S.addedEx[S.day])return;
+    S.addedEx[S.day]=S.addedEx[S.day].filter(e=>e.id!==exId);
   }
-  save();rGym();
+  renderEditDayBody();
+}
+
+function editAddEx(){
+  const n=(document.getElementById('new-ex-name')?.value||'').trim();
+  if(!n)return;
+  const s=parseInt(document.getElementById('new-ex-sets')?.value)||3;
+  const r1=parseInt(document.getElementById('new-ex-r1')?.value)||8;
+  const r2=parseInt(document.getElementById('new-ex-r2')?.value)||12;
+  const rest=(document.getElementById('new-ex-rest')?.value||'90 s').trim();
+  if(!S.addedEx)S.addedEx={};
+  if(!S.addedEx[S.day])S.addedEx[S.day]=[];
+  S.addedEx[S.day].push({id:`cx_${S.day}_${Date.now()}`,n,s,r1,r2,rest,custom:true});
+  renderEditDayBody();
+}
+
+function saveEditDay(){
+  const day=DAYS.find(d=>d.id===S.day);
+  // Save renamed base exercises
+  document.querySelectorAll('#edit-rows-list .edit-row[data-type="base"]').forEach(row=>{
+    const exId=row.dataset.id;
+    const newName=(row.querySelector('.edit-name')?.value||'').trim();
+    const origEx=day.ex.find(e=>e.id===exId);
+    if(origEx&&newName&&newName!==origEx.n){
+      if(!S.customEx)S.customEx={};
+      S.customEx[exId]={...(S.customEx[exId]||{}),n:newName};
+    }
+  });
+  // Save renamed custom exercises
+  document.querySelectorAll('#edit-rows-list .edit-row[data-type="added"]').forEach(row=>{
+    const exId=row.dataset.id;
+    const newName=(row.querySelector('.edit-name')?.value||'').trim();
+    if(newName&&S.addedEx?.[S.day]){
+      const ex=S.addedEx[S.day].find(e=>e.id===exId);
+      if(ex)ex.n=newName;
+    }
+  });
+  save();closeSheet();
+  setTimeout(rGym,50);
 }
 
 // ── PLATE CALCULATOR ─────────────────────────────────
