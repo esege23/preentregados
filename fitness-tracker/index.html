@@ -1152,9 +1152,17 @@ function renderEditDayBody(){
     </div>`;
   }).join('');
 
-  const addedRows=addedEx.map(ex=>`<div class="edit-row" data-id="${ex.id}" data-type="added">
-    <input class="fi edit-name" style="flex:1;margin:0" value="${(ex.n||'').replace(/"/g,'&quot;')}" placeholder="Nombre">
-    <button onclick="editDelEx('${ex.id}','added')" style="flex-shrink:0;width:40px;height:44px;background:none;border:1px solid var(--line);border-left:none;color:var(--warn);font-size:18px;cursor:pointer;-webkit-appearance:none">×</button>
+  const addedRows=addedEx.map(ex=>`<div style="border:1px solid var(--line);border-radius:8px;margin-bottom:8px;overflow:hidden" data-id="${ex.id}" data-type="added">
+    <div style="display:flex;align-items:center">
+      <input class="fi edit-name" style="flex:1;margin:0;border:none;border-radius:0;height:44px" value="${(ex.n||'').replace(/"/g,'&quot;')}" placeholder="Nombre">
+      <button onclick="editDelEx('${ex.id}','added')" style="flex-shrink:0;width:40px;height:44px;background:none;border:none;border-left:1px solid var(--line);color:var(--warn);font-size:18px;cursor:pointer;-webkit-appearance:none">×</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:8px;border-top:1px solid var(--line)">
+      <div><div class="fl">Series</div><input class="fi edit-sets" type="number" value="${ex.s||3}" min="1" max="10"></div>
+      <div><div class="fl">Rep mín</div><input class="fi edit-r1" type="number" value="${ex.r1||8}" min="1"></div>
+      <div><div class="fl">Rep máx</div><input class="fi edit-r2" type="number" value="${ex.r2||12}" min="1"></div>
+    </div>
+    <div style="padding:0 8px 8px"><input class="fi edit-rest" placeholder="Descanso (ej: 90 s)" value="${(ex.rest||'').replace(/"/g,'&quot;')}" type="text"></div>
   </div>`).join('');
 
   body.innerHTML=`
@@ -1213,13 +1221,22 @@ function saveEditDay(){
       S.customEx[exId]={...(S.customEx[exId]||{}),n:newName};
     }
   });
-  // Save renamed custom exercises
-  document.querySelectorAll('#edit-rows-list .edit-row[data-type="added"]').forEach(row=>{
+  // Save edits to custom exercises (name + sets/reps/rest)
+  document.querySelectorAll('#edit-rows-list [data-type="added"]').forEach(row=>{
     const exId=row.dataset.id;
-    const newName=(row.querySelector('.edit-name')?.value||'').trim();
-    if(newName&&S.addedEx?.[S.day]){
+    if(S.addedEx?.[S.day]){
       const ex=S.addedEx[S.day].find(e=>e.id===exId);
-      if(ex)ex.n=newName;
+      if(!ex)return;
+      const newName=(row.querySelector('.edit-name')?.value||'').trim();
+      if(newName)ex.n=newName;
+      const s=parseInt(row.querySelector('.edit-sets')?.value);
+      const r1=parseInt(row.querySelector('.edit-r1')?.value);
+      const r2=parseInt(row.querySelector('.edit-r2')?.value);
+      const rest=(row.querySelector('.edit-rest')?.value||'').trim();
+      if(s>0)ex.s=s;
+      if(r1>0)ex.r1=r1;
+      if(r2>0)ex.r2=r2;
+      if(rest)ex.rest=rest;
     }
   });
   save();closeSheet();
