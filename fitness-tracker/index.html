@@ -1354,7 +1354,8 @@ function closeSheet(){
 function openExSheet(exId,dayId){
   curExId=exId;curDayId=dayId;
   const day=DAYS.find(d=>d.id===dayId);
-  const ex=day.ex.find(e=>e.id===exId);
+  const ex=day.ex.find(e=>e.id===exId)||(S.addedEx?.[dayId]||[]).find(e=>e.id===exId);
+  if(!ex)return;
   const hist=lastSessions(exId,dayId,3);
   const ls=hist[0]||null;
   const saved=(S.workouts[curKey()]?.exercises?.[exId])||[];
