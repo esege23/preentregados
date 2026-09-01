@@ -845,8 +845,6 @@ function rGym(){
     </div>`;
   }).join('');
 
-  const cardio=day.cardio?`<div class="crd"><div class="crd-t">Cardio · Zona 2</div><p>${day.cardio}</p></div>`:'';
-
   p.innerHTML=`<div style="padding-top:14px">
     <div class="dtabs">${tabs}</div>
     <div class="wkbar">
@@ -859,10 +857,7 @@ function rGym(){
     <button onclick="openEditDaySheet()" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:var(--panel);border:1px solid var(--line);border-top:none;padding:11px 14px;color:var(--dim);font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;-webkit-appearance:none">
       ✏ Editar rutina
     </button>
-    ${cardio}
-    <div class="sl" style="margin-top:20px">Nota de la sesión</div>
-    <textarea class="fi note-gym-ta" style="height:68px;resize:none;margin-bottom:4px" placeholder="Cómo te sentiste, incidencias, carga real, RPE subjetivo..."></textarea>
-    <div class="sl" style="margin-top:16px">Configuración del plan</div>
+    <div class="sl" style="margin-top:20px">Configuración del plan</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px">
       <div>
         <div class="wkp" style="margin-bottom:6px">Días por semana</div>
@@ -890,8 +885,6 @@ function rGym(){
     </div>
     <button class="btns" onclick="openPlatesSheet()" style="margin-top:14px">Calculadora de discos</button>
     </div>`;
-  const nta=p.querySelector('.note-gym-ta');
-  if(nta){nta.value=S.workouts[curKey()]?.note||'';nta.oninput=()=>saveNote(nta.value);}
 }
 
 function rCom(){
@@ -1359,6 +1352,7 @@ function openExSheet(exId,dayId){
   const hist=lastSessions(exId,dayId,3);
   const ls=hist[0]||null;
   const saved=(S.workouts[curKey()]?.exercises?.[exId])||[];
+  const savedNote=S.workouts[curKey()]?.exNotes?.[exId]||'';
 
   const sets=saved.length>=ex.s
     ?saved.slice(0,ex.s)
@@ -1369,7 +1363,7 @@ function openExSheet(exId,dayId){
       }))];
 
   document.getElementById('sh-ex-name').textContent=S.customEx?.[exId]?.n||ex.n;
-  document.getElementById('sh-ex-plan').textContent=`${ex.s} series × ${rs(ex)} reps · desc ${ex.rest}`;
+  document.getElementById('sh-ex-plan').textContent=`${ex.s} series × ${rs(ex)} reps`;
   document.getElementById('sh-ex-last').innerHTML=hist.length
     ?hist.map(h=>`<div style="margin-bottom:2px"><span style="font-family:'Space Mono',monospace;font-size:9px;color:var(--dim)">Sem ${h.week}:</span> <b>${h.sets.map(s=>`${s.w||'?'}kg×${s.r||'?'}`).join(' · ')}</b></div>`).join('')
     :'<span style="color:var(--muted)">Primera vez — establecé tu peso base</span>';
@@ -1387,7 +1381,17 @@ function openExSheet(exId,dayId){
       <input class="si" type="number" id="r${i}" min="0" max="100" value="${s.r||''}" placeholder="${rs(ex)}" oninput="upd1RM()">
       <button class="sc2 ${s.done?'on':''}" id="c${i}" onclick="togSet(${i})">${s.done?'✓':''}</button>
     </div>`).join('')}
-    <button class="btnp" onclick="saveEx(${ex.s})" style="margin-top:6px">Guardar ejercicio</button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;margin-bottom:4px">
+      <div>
+        <div class="fl">Descanso</div>
+        <input class="fi" type="text" id="ex-rest-val" value="${(ex.rest||'').replace(/"/g,'&quot;')}" placeholder="90 s" style="margin:0">
+      </div>
+      <div>
+        <div class="fl">Nota</div>
+        <input class="fi" type="text" id="ex-note" value="${savedNote.replace(/"/g,'&quot;')}" placeholder="Sensaciones, carga real..." style="margin:0">
+      </div>
+    </div>
+    <button class="btnp" onclick="saveEx(${ex.s})" style="margin-top:10px">Guardar ejercicio</button>
     <div style="height:16px"></div>`;
 
   openSheet('sh-ex');
@@ -1412,6 +1416,17 @@ function saveEx(ns){
     });
   }
   S.workouts[k].exercises[curExId]=sets;
+  // Save per-exercise note
+  const note=(document.getElementById('ex-note')?.value||'').trim();
+  if(!S.workouts[k].exNotes)S.workouts[k].exNotes={};
+  if(note)S.workouts[k].exNotes[curExId]=note;
+  else delete S.workouts[k].exNotes[curExId];
+  // Save modified rest value back to addedEx if it's a custom exercise
+  const restVal=(document.getElementById('ex-rest-val')?.value||'').trim();
+  if(restVal&&S.addedEx?.[curDayId]){
+    const ex=S.addedEx[curDayId].find(e=>e.id===curExId);
+    if(ex)ex.rest=restVal;
+  }
   save();closeSheet();
   setTimeout(()=>{rGym();if(S.pg==='hoy')rHoy()},50);
 }
