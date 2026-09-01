@@ -143,12 +143,6 @@ html,body{height:100%;background:var(--bg);color:var(--ink);font-family:'Barlow'
 .cw.c{background:var(--acc)}
 .cw.dl{background:var(--warn)}
 
-/* ── CARDIO ── */
-.crd{background:linear-gradient(135deg,rgba(255,122,61,.14),rgba(205,255,58,.07));
-  border:1px solid var(--warn);padding:14px 16px;margin-top:8px}
-.crd-t{font-family:'Anton',sans-serif;font-size:15px;color:var(--warn);
-  text-transform:uppercase;letter-spacing:.5px;font-weight:400}
-.crd p{font-size:13px;color:var(--ink);margin-top:5px}
 
 /* ── MEAL ROWS ── */
 .mr{background:var(--panel);border:1px solid var(--line);border-top:none;
@@ -841,7 +835,7 @@ function rGym(){
         <div class="ex-r"><div class="ex-sets">${tot}×${rs(ex)}</div>
           <div class="ex-last">${lastTxt}</div></div>
       </button>
-      <button class="ex-ed" onclick="${isAdded?`openEditDaySheet()`:` openChExSheet('${ex.id}',${day.id})`}">✏</button>
+      <button class="ex-ed" onclick="${isAdded?`openExSheet('${ex.id}',${day.id})`:` openChExSheet('${ex.id}',${day.id})`}">✏</button>
     </div>`;
   }).join('');
 
